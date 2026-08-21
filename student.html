@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MSRT300: PACS Kano — Student</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header>
+  <div class="title-block">
+    <span class="eyebrow">MSRT300 · Student</span>
+    <h1>PACS Kano Activity</h1>
+    <div class="muted">For each feature, choose the category that best fits it and how well it's typically executed today. Then propose three new features and pitch one.</div>
+  </div>
+  <div class="toolbar"><a href="index.html"><button type="button">Back</button></a></div>
+</header>
+
+<main class="student">
+
+  <section class="card idcard" id="idCard">
+    <b class="h" style="font-family:var(--disp);font-size:15px">Who's answering?</b>
+    <p class="muted" style="margin:6px 0 14px">No login needed. Pick a PIN the first time — use the same name and PIN later to load your saved progress.</p>
+    <div class="idrow">
+      <label>Your name<input id="nameInput" type="text" autocomplete="name" placeholder="First and last name"></label>
+      <label>Your PIN (4+ digits, any you like)<input id="pinInput" type="text" inputmode="numeric" placeholder="e.g. 4471"></label>
+    </div>
+    <div class="gate-error" id="idError"></div>
+    <div class="toolbar" style="margin-top:8px">
+      <button class="primary" id="continueBtn">Continue</button>
+      <span class="muted" id="idStatus"></span>
+    </div>
+  </section>
+
+  <div id="formArea" style="display:none">
+    <section class="card section" id="whoBar" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div><b id="whoName" style="font-family:var(--disp)"></b> <span class="status-pill draft" id="whoStatus">draft</span></div>
+      <button type="button" id="switchBtn">Not you? Switch name/PIN</button>
+    </section>
+
+    <section class="card section">
+      <h2>Part 1 — Classify each feature</h2>
+      <div class="progress" id="progressText">0 / 20 classified</div>
+      <div id="featureList"></div>
+    </section>
+
+    <section class="card section">
+      <h2>Part 2 — Propose three new features</h2>
+      <p class="muted" style="margin:4px 0 0">What would you add to a PACS that isn't on the list above? Be specific about who benefits and why.</p>
+      <div id="proposeList"></div>
+    </section>
+
+    <section class="card section">
+      <h2>Part 3 — Pitch it to the CTO</h2>
+      <p class="muted" style="margin:4px 0 10px">Pick one of your three proposed features and make the investment case.</p>
+      <label style="display:block;font-size:11.5px;font-weight:700;color:var(--ink-dim);margin-bottom:6px">Which feature are you pitching?</label>
+      <select id="pitchFeatureSel" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-family:var(--body);font-size:13px;margin-bottom:12px">
+        <option value="0">Feature 1</option>
+        <option value="1">Feature 2</option>
+        <option value="2">Feature 3</option>
+      </select>
+      <label style="display:block;font-size:11.5px;font-weight:700;color:var(--ink-dim);margin-bottom:6px">Your pitch</label>
+      <textarea id="pitchText" placeholder="Why is this a no-brainer investment for the department?"></textarea>
+    </section>
+
+    <section class="card section">
+      <h2>Overall justification <span class="muted" style="font-weight:400">(optional)</span></h2>
+      <textarea id="justificationText" placeholder="Anything you want to explain about your classifications above?"></textarea>
+    </section>
+
+    <div class="savebar">
+      <span class="msg" id="saveMsg"></span>
+      <div class="toolbar">
+        <button id="saveBtn">Save progress</button>
+        <button class="primary" id="submitBtn">Submit final answer</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="assets/config.js"></script>
+<script src="assets/data.js"></script>
+<script>
+let state = null; // {name, pin, status, timestamp, answers[], executions[], newFeatures[3], pitchFeature, pitch, justification}
+let usingLocalFallback = false;
+
+function blankState(name, pin){
+  return {
+    name, pin, status:'draft', timestamp:null,
+    answers: FEATURES.map(()=>null),
+    executions: FEATURES.map(()=>null),
+    newFeatures: [{name:'',description:''},{name:'',description:''},{name:'',description:''}],
+    pitchFeature: 0, pitch:'', justification:''
+  };
+}
+
+function backendConfigured(){
+  return typeof APPS_SCRIPT_URL === 'string' && APPS_SCRIPT_URL.indexOf('http') === 0;
+}
+
+async function apiPost(action, payload){
+  const body = JSON.stringify(Object.assign({action}, payload));
+  if(!backendConfigured()) throw new Error('not_configured');
+  const res = await fetch(APPS_SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body});
+  return await res.json();
+}
+
+function localKey(name, pin){ return 'pacskano_'+name.trim().toLowerCase()+'_'+pin.trim(); }
+
+async function loadRecord(name, pin){
+  if(backendConfigured()){
+    try{
+      const r = await apiPost('load', {name, pin});
+      return r; // {ok:true, exists:bool, data} or {ok:false, error}
+    }catch(err){
+      // fall through to local fallback below
+    }
+  }
+  usingLocalFallback = true;
+  const raw = localStorage.getItem(localKey(name, pin));
+  if(raw) return {ok:true, exists:true, data:JSON.parse(raw)};
+  // check if this name is used locally under a different pin
+  const otherKeyPrefix = 'pacskano_'+name.trim().toLowerCase()+'_';
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(k.indexOf(otherKeyPrefix)===0 && k!==localKey(name,pin)) return {ok:false, error:'pin_mismatch'};
+  }
+  return {ok:true, exists:false};
+}
+
+async function saveRecord(st){
+  if(backendConfigured() && !usingLocalFallback){
+    try{
+      const r = await apiPost('save', {name:st.name, pin:st.pin, status:st.status, data:st});
+      return r;
+    }catch(err){
+      usingLocalFallback = true;
+    }
+  }
+  localStorage.setItem(localKey(st.name, st.pin), JSON.stringify(st));
+  return {ok:true, local:true};
+}
+
+document.getElementById('continueBtn').onclick = async () => {
+  const name = document.getElementById('nameInput').value.trim();
+  const pin = document.getElementById('pinInput').value.trim();
+  const errEl = document.getElementById('idError');
+  errEl.textContent = '';
+  if(!name){ errEl.textContent = 'Enter your name.'; return; }
+  if(pin.length < 4){ errEl.textContent = 'PIN needs to be at least 4 digits.'; return; }
+  document.getElementById('idStatus').textContent = 'Checking…';
+  const r = await loadRecord(name, pin);
+  document.getElementById('idStatus').textContent = '';
+  if(!r.ok){
+    if(r.error === 'pin_mismatch') errEl.textContent = 'That name is already saved under a different PIN. Use your original PIN, or use a slightly different name if this is your first time.';
+    else errEl.textContent = 'Could not check saved progress. Try again.';
+    return;
+  }
+  state = r.exists ? Object.assign(blankState(name,pin), r.data, {name, pin}) : blankState(name, pin);
+  openForm(r.exists);
+};
+
+function openForm(loaded){
+  document.getElementById('idCard').style.display = 'none';
+  document.getElementById('formArea').style.display = 'block';
+  document.getElementById('whoName').textContent = state.name;
+  setStatusPill(state.status);
+  document.getElementById('saveMsg').textContent = loaded ? 'Loaded your saved progress.' : 'Starting fresh — nothing saved yet.';
+  if(usingLocalFallback) document.getElementById('saveMsg').textContent += ' (Saving to this browser only — live sync isn\'t configured yet.)';
+  renderFeatureList();
+  renderPropose();
+  document.getElementById('pitchFeatureSel').value = state.pitchFeature || 0;
+  document.getElementById('pitchText').value = state.pitch || '';
+  document.getElementById('justificationText').value = state.justification || '';
+}
+
+function setStatusPill(status){
+  const el = document.getElementById('whoStatus');
+  el.textContent = status === 'submitted' ? 'submitted' : 'draft';
+  el.className = 'status-pill ' + (status === 'submitted' ? 'submitted' : 'draft');
+}
+
+document.getElementById('switchBtn').onclick = () => {
+  document.getElementById('formArea').style.display = 'none';
+  document.getElementById('idCard').style.display = 'block';
+  document.getElementById('nameInput').value = '';
+  document.getElementById('pinInput').value = '';
+  state = null;
+};
+
+function updateProgress(){
+  const n = state.answers.filter(Boolean).length;
+  document.getElementById('progressText').textContent = n + ' / ' + FEATURES.length + ' classified';
+}
+
+function renderFeatureList(){
+  const box = document.getElementById('featureList');
+  box.innerHTML = '';
+  FEATURES.forEach((f, fi) => {
+    const card = document.createElement('div');
+    card.className = 'qcard';
+    let catRow = '<div class="pillrow">' + CATEGORIES.map(c =>
+      `<button type="button" class="pillbtn" data-fi="${fi}" data-cat="${c}">${c}</button>`
+    ).join('') + '</div>';
+    let execRow = '<div class="pillrow">' + EXEC_LEVELS.map(x =>
+      `<button type="button" class="pillbtn" data-fi="${fi}" data-exec="${x}">${x}</button>`
+    ).join('') + '</div>';
+    card.innerHTML = `<b>${fi+1}. ${f}</b><p class="desc">${DESCRIPTIONS[fi]}</p>${catRow}${execRow}`;
+    box.appendChild(card);
+  });
+  syncPillStates();
+  box.querySelectorAll('.pillbtn[data-cat]').forEach(btn => {
+    btn.onclick = () => {
+      const fi = +btn.dataset.fi;
+      state.answers[fi] = (state.answers[fi] === btn.dataset.cat) ? null : btn.dataset.cat;
+      syncPillStates(); updateProgress();
+    };
+  });
+  box.querySelectorAll('.pillbtn[data-exec]').forEach(btn => {
+    btn.onclick = () => {
+      const fi = +btn.dataset.fi;
+      state.executions[fi] = (state.executions[fi] === btn.dataset.exec) ? null : btn.dataset.exec;
+      syncPillStates();
+    };
+  });
+  updateProgress();
+}
+function syncPillStates(){
+  document.querySelectorAll('.pillbtn[data-cat]').forEach(btn => {
+    btn.classList.toggle('sel', state.answers[+btn.dataset.fi] === btn.dataset.cat);
+  });
+  document.querySelectorAll('.pillbtn[data-exec]').forEach(btn => {
+    btn.classList.toggle('execsel', state.executions[+btn.dataset.fi] === btn.dataset.exec);
+  });
+}
+
+function renderPropose(){
+  const box = document.getElementById('proposeList');
+  box.innerHTML = '';
+  state.newFeatures.forEach((nf, i) => {
+    const block = document.createElement('div');
+    block.className = 'feat-block';
+    block.innerHTML = `<b>Feature ${i+1}</b>
+      <label>Name</label><input class="feat-input" data-i="${i}" data-field="name" value="${(nf.name||'').replace(/"/g,'&quot;')}">
+      <label>Why it matters</label><textarea data-i="${i}" data-field="description" style="min-height:56px">${nf.description||''}</textarea>`;
+    box.appendChild(block);
+  });
+  box.querySelectorAll('[data-field]').forEach(el => {
+    el.oninput = () => { state.newFeatures[+el.dataset.i][el.dataset.field] = el.value; refreshPitchOptions(); };
+  });
+  refreshPitchOptions();
+}
+function refreshPitchOptions(){
+  const sel = document.getElementById('pitchFeatureSel');
+  const cur = sel.value;
+  sel.innerHTML = state.newFeatures.map((nf,i) => `<option value="${i}">${nf.name ? nf.name : 'Feature '+(i+1)}</option>`).join('');
+  sel.value = cur;
+}
+document.getElementById('pitchFeatureSel').onchange = e => { state.pitchFeature = +e.target.value; };
+document.getElementById('pitchText').oninput = e => { state.pitch = e.target.value; };
+document.getElementById('justificationText').oninput = e => { state.justification = e.target.value; };
+
+async function doSave(status){
+  state.status = status;
+  state.timestamp = new Date().toISOString();
+  document.getElementById('saveMsg').textContent = 'Saving…';
+  const r = await saveRecord(state);
+  setStatusPill(state.status);
+  if(r && r.ok){
+    document.getElementById('saveMsg').textContent = (status === 'submitted' ? 'Submitted.' : 'Saved.') + (usingLocalFallback ? ' (this browser only)' : ' Synced.');
+  } else {
+    document.getElementById('saveMsg').textContent = 'Could not save — check your connection and try again.';
+  }
+}
+document.getElementById('saveBtn').onclick = () => doSave('draft');
+document.getElementById('submitBtn').onclick = () => {
+  if(confirm('Submit your final answer? You can still come back and re-submit later if needed.')) doSave('submitted');
+};
+</script>
+</body>
+</html>

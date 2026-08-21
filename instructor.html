@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MSRT300: PACS Kano — Instructor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="gate-wrap" id="gateWrap">
+  <div class="card gate-card">
+    <span class="eyebrow">MSRT300 · Instructor</span>
+    <h1 style="font-size:22px">Enter password</h1>
+    <p class="muted">This is a light deterrent, not real security — this is a static site, so anyone who views the page source can read the password. Don't put anything here you wouldn't want a determined student to see.</p>
+    <input type="password" id="pwInput" placeholder="Password">
+    <div class="gate-error" id="pwError"></div>
+    <button class="primary" id="pwSubmit">Enter</button>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+<div class="warn-strip">Instructor view. Keep this tab out of any screen share.</div>
+<header>
+  <div class="title-block">
+    <span class="eyebrow">MSRT300 · Instructor Console</span>
+    <h1>PACS Kano Comparator</h1>
+    <div class="muted">Student submissions load automatically from the response sheet and plot against your answer key.</div>
+  </div>
+  <div class="toolbar">
+    <span class="muted" id="syncStatus" style="font-family:var(--mono);font-size:11px"></span>
+    <button id="refreshBtn">Refresh now</button>
+    <a href="index.html"><button type="button">Back</button></a>
+  </div>
+</header>
+<div class="tabbar">
+  <button class="tabbtn active" id="tabComparator">Comparator</button>
+  <button class="tabbtn" id="tabGrading">Grading</button>
+  <button class="tabbtn" id="tabKey">Answer key</button>
+  <button class="tabbtn" id="tabDanger">Danger zone</button>
+</div>
+
+<main class="console" id="comparatorView">
+<section class="card side">
+  <b class="h">Responses</b>
+  <div id="people"></div>
+  <hr>
+  <b class="h">Questions</b>
+  <div class="empty" style="padding:2px 2px 6px">Click a question to isolate every response on the graph.</div>
+  <div id="questions"></div>
+</section>
+
+<section class="card graph" id="wrap">
+  <div class="graph-frame">
+    <svg id="chart" viewBox="0 0 900 650">
+      <defs>
+        <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+          <path d="M30 0 L0 0 0 30" fill="none" stroke="#eef1f4" stroke-width="1"/>
+        </pattern>
+        <filter id="lift" x="-40%" y="-40%" width="180%" height="180%">
+          <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#1a2430" flood-opacity=".22"/>
+        </filter>
+      </defs>
+      <rect x="0" y="0" width="900" height="650" fill="#fdfefe"/>
+      <rect x="0" y="0" width="900" height="650" fill="url(#grid)"/>
+      <g font-family="IBM Plex Mono" fill="#aab4bf" font-size="11" letter-spacing=".04em">
+        <text x="24" y="30">COHORT COMPARATOR</text>
+        <text x="24" y="46" fill="#c3cbd3">Y AXIS: SATISFACTION</text>
+        <text x="876" y="30" text-anchor="end">X AXIS: EXECUTION QUALITY</text>
+        <text x="876" y="46" text-anchor="end" fill="#c3cbd3" id="readoutCount">RESPONDENTS 0</text>
+        <text x="24" y="628" fill="#c3cbd3">SCALE: NORMALIZED</text>
+        <text x="876" y="628" text-anchor="end" fill="#c3cbd3">KANO MODEL, 1984</text>
+      </g>
+      <g stroke="#c7ced6" stroke-width="1.4">
+        <line x1="120" y1="345" x2="815" y2="345"/>
+        <line x1="460" y1="96" x2="460" y2="605"/>
+      </g>
+      <g fill="#c7ced6">
+        <path d="M815 345 l-11 -5.5 v11 z"/>
+        <path d="M460 96 l-5.5 11 h11 z"/>
+      </g>
+      <g fill="none" stroke-linecap="round">
+        <path d="M150 345 C 340 344, 610 300, 782 118" stroke="#fdfefe" stroke-width="9"/>
+        <path d="M175 560 L 770 140" stroke="#fdfefe" stroke-width="9"/>
+        <path d="M195 585 C 300 430, 415 362, 782 350" stroke="#fdfefe" stroke-width="9"/>
+        <path d="M150 352 L 782 352" stroke="#fdfefe" stroke-width="8"/>
+      </g>
+      <g fill="none" stroke-linecap="round" filter="url(#lift)">
+        <path d="M150 345 C 340 344, 610 300, 782 118" stroke="var(--attractive)" stroke-width="4"/>
+        <path d="M175 560 L 770 140" stroke="var(--performance)" stroke-width="4"/>
+        <path d="M195 585 C 300 430, 415 362, 782 350" stroke="var(--mustbe)" stroke-width="4"/>
+        <path d="M150 352 L 782 352" stroke="var(--indifferent)" stroke-width="3" stroke-dasharray="1 7"/>
+      </g>
+      <g font-family="Space Grotesk" font-weight="600" fill="#3a4552">
+        <g class="axis-hint" data-tip="Top of the vertical axis. The feature exceeds what the user expected.">
+          <text x="440" y="80" font-size="14" text-anchor="middle" letter-spacing=".02em">DELIGHTED</text>
+        </g>
+        <g class="axis-hint" data-tip="Bottom of the vertical axis. The user is frustrated or unhappy.">
+          <text x="440" y="632" font-size="14" text-anchor="middle" letter-spacing=".02em">DISSATISFIED</text>
+        </g>
+        <g class="axis-hint" data-tip="Left end of the horizontal axis. The feature is missing, broken, or poorly executed.">
+          <text x="112" y="330" font-size="12.5" text-anchor="end" fill="#8b95a1">POORLY DONE</text>
+        </g>
+        <g class="axis-hint" data-tip="Right end of the horizontal axis. The feature is fully present and well executed.">
+          <text x="823" y="330" font-size="12.5" fill="#8b95a1">WELL DONE</text>
+        </g>
+      </g>
+      <g id="markers"></g>
+    </svg>
+    <div id="tooltip" class="tooltip"><button class="tt-close" id="ttClose" title="Close">&times;</button><div id="ttBody"></div></div>
+  </div>
+  <div class="answer-panel" id="answerPanel" style="display:none">
+    <div class="ap-head"><b id="apTitle"></b><button id="apClose">Show all</button></div>
+    <div id="apList"></div>
+  </div>
+  <div class="kano-key">
+    <div class="key-item"><div class="row"><i style="background:var(--attractive)"></i><b>Attractive</b></div><p>Unexpected when present, not missed when absent.</p></div>
+    <div class="key-item"><div class="row"><i style="background:var(--performance)"></i><b>Performance</b></div><p>Satisfaction rises the better this is executed.</p></div>
+    <div class="key-item"><div class="row"><i style="background:var(--mustbe)"></i><b>Must-Be</b></div><p>Expected by default, its absence causes real frustration.</p></div>
+    <div class="key-item"><div class="row"><i style="background:var(--indifferent)"></i><b>Indifferent</b></div><p>Users notice little change either way.</p></div>
+  </div>
+</section>
+</main>
+
+<main class="grading" id="gradingView" style="display:none">
+  <section class="card roster"><b>Students</b><div id="gradingRoster"></div></section>
+  <section class="card panel" id="gradingPanel"><div class="empty">Select a student to begin scoring.</div></section>
+</main>
+<section class="card summary" id="gradingSummaryWrap" style="display:none">
+  <div class="toolbar" style="justify-content:space-between;margin-bottom:12px">
+    <b class="h" style="margin:0">Summary</b>
+    <button id="exportCsv">Download grades, CSV</button>
+  </div>
+  <div id="summaryTable"></div>
+</section>
+
+<main style="display:none;max-width:820px;margin:0 auto;padding:20px 24px" id="keyView">
+  <section class="card keyeditor">
+    <b class="h" style="font-family:var(--disp);font-size:15px">Answer key</b>
+    <p class="muted" style="margin:6px 0 14px">This is what plots as your ground truth on the comparator. Edit it here, then download the file and commit it to <code>data/answer-key.json</code> to make the change permanent (this is a static site — edits here don't save themselves).</p>
+    <div id="keyRows"></div>
+    <div class="toolbar" style="margin-top:14px">
+      <button class="primary" id="downloadKeyBtn">Download answer-key.json</button>
+      <span class="muted" id="keyMsg"></span>
+    </div>
+  </section>
+</main>
+
+<main style="display:none;max-width:820px;margin:0 auto;padding:20px 24px" id="dangerView">
+  <section class="card danger-card">
+    <h2>Clear all responses</h2>
+    <p class="muted">Permanently deletes every student submission from the response sheet. Do this after grades are finalized to stop retaining student answers. This cannot be undone.</p>
+    <div class="toolbar">
+      <input type="text" id="confirmDelete" placeholder="Type DELETE to confirm" style="border:1px solid var(--line);border-radius:10px;padding:9px 11px">
+      <button class="danger" id="clearAllBtn">Clear all responses</button>
+    </div>
+    <div class="muted" id="dangerMsg" style="margin-top:8px"></div>
+  </section>
+  <section class="card danger-card" style="margin-top:16px">
+    <h2>Clear grades in this browser</h2>
+    <p class="muted">Grades are saved only in this browser (via the CSV export, not the response sheet). This clears them from here.</p>
+    <button class="danger" id="clearGradesBtn">Clear local grades</button>
+  </section>
+  <section class="card" style="margin-top:16px;padding:18px">
+    <b class="h" style="font-family:var(--disp);font-size:14px">Removing grading entirely</b>
+    <p class="muted">To remove the grading feature from the site altogether once you're done with it, delete the "Grading" tab button and its two <code>&lt;section&gt;</code> blocks from <code>instructor.html</code>, and remove <code>renderGradingRoster()</code> / <code>renderGradingPanel()</code> calls from the script — then redeploy.</p>
+  </section>
+</main>
+
+</div>
+
+<script src="assets/config.js"></script>
+<script src="assets/data.js"></script>
+<script>
+/* ---------- password gate ---------- */
+(function(){
+  const unlocked = sessionStorage.getItem('pacskano_instructor_unlocked') === '1';
+  if(unlocked){ document.getElementById('gateWrap').style.display='none'; document.getElementById('app').style.display='block'; boot(); return; }
+  document.getElementById('pwSubmit').onclick = tryUnlock;
+  document.getElementById('pwInput').addEventListener('keydown', e => { if(e.key==='Enter') tryUnlock(); });
+  function tryUnlock(){
+    const v = document.getElementById('pwInput').value;
+    if(v === INSTRUCTOR_PASSWORD){
+      sessionStorage.setItem('pacskano_instructor_unlocked','1');
+      document.getElementById('gateWrap').style.display='none';
+      document.getElementById('app').style.display='block';
+      boot();
+    } else {
+      document.getElementById('pwError').textContent = 'Incorrect password.';
+    }
+  }
+})();
+
+/* ---------- state ---------- */
+let responses = [];       // [groundTruthEntry, ...studentEntries]
+let groundTruthIndex = 0;
+let answerKey = FEATURES.map(()=>({cat:null, exec:null}));
+let focus = null, pinned = false;
+let grades = {};
+let gradingActive = null;
+let refreshTimer = null;
+
+function backendConfigured(){
+  return typeof APPS_SCRIPT_URL === 'string' && APPS_SCRIPT_URL.indexOf('http') === 0;
+}
+
+async function boot(){
+  grades = JSON.parse(localStorage.getItem('pacskano_grades') || '{}');
+  await loadAnswerKey();
+  await refreshResponses();
+  refreshTimer = setInterval(refreshResponses, 20000);
+  wireStaticHandlers();
+}
+
+async function loadAnswerKey(){
+  try{
+    const res = await fetch('data/answer-key.json', {cache:'no-store'});
+    const data = await res.json();
+    if(Array.isArray(data.entries)) answerKey = data.entries;
+  }catch(err){ /* no key file yet — stays blank */ }
+}
+
+async function refreshResponses(){
+  const statusEl = document.getElementById('syncStatus');
+  if(!backendConfigured()){
+    statusEl.textContent = 'Backend not configured — see README';
+    buildResponsesFromKeyOnly();
+    render();
+    return;
+  }
+  statusEl.textContent = 'Syncing…';
+  try{
+    const res = await fetch(APPS_SCRIPT_URL + '?action=list', {cache:'no-store'});
+    const data = await res.json();
+    const students = (data && data.ok && Array.isArray(data.responses)) ? data.responses : [];
+    buildResponsesFromKeyOnly();
+    students.forEach(s => responses.push(s));
+    statusEl.textContent = 'Synced ' + new Date().toLocaleTimeString();
+  }catch(err){
+    statusEl.textContent = 'Sync failed — showing last loaded data';
+  }
+  render();
+}
+function buildResponsesFromKeyOnly(){
+  responses = [{
+    name: 'Instructor answer key',
+    answers: answerKey.map(k=>k.cat),
+    executions: answerKey.map(k=>k.exec)
+  }];
+  groundTruthIndex = 0;
+}
+
+document.getElementById('refreshBtn').onclick = refreshResponses;
+
+/* ---------- tabs ---------- */
+function showTab(name){
+  document.getElementById('comparatorView').style.display = name==='comparator' ? 'grid' : 'none';
+  document.getElementById('gradingView').style.display = name==='grading' ? 'grid' : 'none';
+  document.getElementById('gradingSummaryWrap').style.display = name==='grading' ? 'block' : 'none';
+  document.getElementById('keyView').style.display = name==='key' ? 'block' : 'none';
+  document.getElementById('dangerView').style.display = name==='danger' ? 'block' : 'none';
+  ['tabComparator','tabGrading','tabKey','tabDanger'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('tab'+name[0].toUpperCase()+name.slice(1)).classList.add('active');
+  if(name==='grading'){ renderGradingRoster(); renderGradingPanel(); renderGradingSummary(); }
+  if(name==='key') renderKeyEditor();
+}
+function wireStaticHandlers(){
+  document.getElementById('tabComparator').onclick = () => showTab('comparator');
+  document.getElementById('tabGrading').onclick = () => showTab('grading');
+  document.getElementById('tabKey').onclick = () => showTab('key');
+  document.getElementById('tabDanger').onclick = () => showTab('danger');
+}
+
+/* ---------- comparator (graph) ---------- */
+function render(){
+  const ppl = document.getElementById('people');
+  ppl.innerHTML = '';
+  responses.forEach((r,i) => {
+    const isGT = i === groundTruthIndex;
+    const row = document.createElement('div');
+    row.className = 'person' + (isGT ? ' gt' : '');
+    const classified = (r.answers||[]).filter(Boolean).length;
+    const statusTag = !isGT && r.status ? ` · ${r.status}` : '';
+    row.innerHTML = `<div class="prow"><b>${r.name}</b>${isGT?'<span class="gtbadge">Answer key</span>':''}</div><small>${classified} / ${FEATURES.length} classified${statusTag}</small>`;
+    ppl.appendChild(row);
+  });
+  document.getElementById('readoutCount').textContent = 'RESPONDENTS ' + (responses.length - 1);
+  computePositions();
+  const m = document.getElementById('markers'); m.innerHTML = '';
+  responses.forEach((r,pi) => (r.answers||[]).forEach((cat,fi) => {
+    if(!cat) return;
+    const exec = r.executions ? r.executions[fi] : null;
+    const p = posGrid[pi][fi];
+    const isGT = pi === groundTruthIndex;
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g'); g.classList.add('marker'); g.dataset.feature = fi;
+    const ring = isGT ? `<circle cx="${p.x}" cy="${p.y}" r="15" fill="none" stroke="var(--accent)" stroke-width="2"/>` : '';
+    g.innerHTML = `${ring}<circle class="mkr" cx="${p.x}" cy="${p.y}" r="${isGT?10:8.5}" fill="${tint(COLORS[cat],pi)}" stroke="#fdfefe" stroke-width="${isGT?2.2:1.6}"/><text x="${p.x}" y="${p.y+3.2}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="600" fill="${tintAlpha(pi)<.35?'#fff':'#151b23'}">${fi+1}</text>`;
+    g.onmouseenter = e => showTip(e,r.name,FEATURES[fi],cat,exec);
+    g.onmouseleave = () => hideTip();
+    g.onclick = e => { e.stopPropagation(); selectFeature(fi); if(focus===fi){ showTip(e,r.name,FEATURES[fi],cat,exec); pinned=true; document.getElementById('tooltip').classList.add('pinned'); } };
+    m.appendChild(g);
+  }));
+  renderQuestions();
+  if(focus!==null){ applyFocus(focus); renderAnswerPanel(focus); }
+}
+let posGrid = [];
+function computePositions(){
+  posGrid = responses.map(()=>[]);
+  const items = [];
+  responses.forEach((r,pi) => (r.answers||[]).forEach((cat,fi) => {
+    if(!cat){ posGrid[pi][fi] = null; return; }
+    const exec = r.executions ? r.executions[fi] : null;
+    const base = point(cat,fi,pi,exec);
+    const isGT = pi === groundTruthIndex;
+    const item = {x:base.x, y:base.y, r:isGT?10:8.5, pi, fi};
+    items.push(item); posGrid[pi][fi] = item;
+  }));
+  resolveCollisions(items,4);
+}
+function showTip(e,name,feature,cat,exec){
+  if(pinned) return;
+  const t = document.getElementById('tooltip'), w = document.getElementById('wrap').getBoundingClientRect();
+  document.getElementById('ttBody').innerHTML = `<b>${name}</b><br>${feature}<br><span class="cat" style="color:${cat==='Performance'?'#e3b04f':'#8fc2f0'}">${cat}${exec?' · '+exec:''}</span>`;
+  t.style.left = (e.clientX-w.left)+'px'; t.style.top = (e.clientY-w.top)+'px'; t.style.opacity = 1;
+}
+function hideTip(force){ if(pinned && !force) return; const t=document.getElementById('tooltip'); t.style.opacity=0; t.classList.remove('pinned'); }
+document.getElementById('ttClose').onclick = e => { e.stopPropagation(); pinned=false; hideTip(true); focus=null; clearFocus(); hideAnswerPanel(); };
+function applyFocus(fi){ document.querySelectorAll('.marker').forEach(m => { const same = +m.dataset.feature===fi; m.classList.toggle('dim',!same); m.classList.toggle('focus',same); }); }
+function clearFocus(){ document.querySelectorAll('.marker').forEach(m => m.classList.remove('dim','focus')); }
+function selectFeature(fi){
+  if(focus===fi){ focus=null; clearFocus(); pinned=false; hideTip(true); hideAnswerPanel(); return; }
+  focus=fi; pinned=false; hideTip(true); applyFocus(fi); renderAnswerPanel(fi); renderQuestions();
+}
+function hideAnswerPanel(){ document.getElementById('answerPanel').style.display='none'; renderQuestions(); }
+function renderAnswerPanel(fi){
+  const panel = document.getElementById('answerPanel');
+  document.getElementById('apTitle').textContent = (fi+1)+'. '+FEATURES[fi];
+  const list = document.getElementById('apList'); list.innerHTML = '';
+  responses.forEach((r,pi) => {
+    const cat = r.answers[fi]; const exec = r.executions ? r.executions[fi] : null; const isGT = pi===groundTruthIndex;
+    const row = document.createElement('div'); row.className = 'ap-row';
+    row.innerHTML = `<span class="dot" style="background:${cat?COLORS[cat]:'#c7ced6'}"></span><b>${r.name}</b>${isGT?'<span class="tag-gt">Key</span>':''}<span class="cat" style="color:${cat?COLORS[cat]:'#8b95a1'}">${cat||'Not answered'}</span><span class="exec">${exec||''}</span>`;
+    list.appendChild(row);
+  });
+  panel.style.display = 'block';
+}
+function renderQuestions(){
+  const box = document.getElementById('questions'); box.innerHTML = '';
+  FEATURES.forEach((f,fi) => {
+    const vals = responses.map(r => r.answers[fi]).filter(Boolean);
+    const u = new Set(vals).size;
+    const d = document.createElement('div'); d.className = 'featureCard' + (focus===fi ? ' active' : '');
+    d.innerHTML = `<b>${fi+1}. ${f}</b><p>${DESCRIPTIONS[fi]}</p>${u>1?'<div class="tag">'+u+' different placements</div>':''}`;
+    d.onclick = () => selectFeature(fi);
+    box.appendChild(d);
+  });
+}
+document.getElementById('wrap').addEventListener('click', () => { focus=null; clearFocus(); pinned=false; hideTip(true); hideAnswerPanel(); });
+document.getElementById('apClose').onclick = () => { focus=null; clearFocus(); pinned=false; hideTip(true); hideAnswerPanel(); };
+const tipEl = document.getElementById('tooltip'), wrapEl = document.getElementById('wrap');
+document.querySelectorAll('.axis-hint').forEach(el => {
+  el.addEventListener('mouseenter', e => { if(el.dataset.tip && !pinned){ document.getElementById('ttBody').textContent = el.dataset.tip; tipEl.style.opacity=1; positionTip(e); } });
+  el.addEventListener('mousemove', e => { if(el.dataset.tip && !pinned) positionTip(e); });
+  el.addEventListener('mouseleave', () => { if(!pinned) tipEl.style.opacity=0; });
+});
+function positionTip(e){ const r = wrapEl.getBoundingClientRect(); tipEl.style.left=(e.clientX-r.left)+'px'; tipEl.style.top=(e.clientY-r.top)+'px'; }
+
+/* ---------- grading ---------- */
+function gradingRoster(){ return responses.filter((r,i) => i !== groundTruthIndex); }
+function totalFor(name){
+  const g = grades[name]; if(!g) return null;
+  let sum=0, count=0;
+  CRITERIA.forEach(c => { if(g[c.key]!=null){ sum+=g[c.key]; count++; } });
+  return count ? sum : null;
+}
+function saveGrades(){ localStorage.setItem('pacskano_grades', JSON.stringify(grades)); }
+function renderGradingRoster(){
+  const list = gradingRoster(); const wrap = document.getElementById('gradingRoster');
+  if(!list.length){ wrap.innerHTML = '<div class="empty">No responses yet.</div>'; return; }
+  wrap.innerHTML = '';
+  list.forEach(r => {
+    const t = totalFor(r.name);
+    const row = document.createElement('div'); row.className = 'rrow' + (gradingActive===r.name ? ' active' : '');
+    row.innerHTML = `<b>${r.name}</b><small>${t==null?'Not started':t+' / 16'}</small>`;
+    row.onclick = () => { gradingActive = r.name; renderGradingRoster(); renderGradingPanel(); };
+    wrap.appendChild(row);
+  });
+}
+function renderGradingPanel(){
+  const panel = document.getElementById('gradingPanel');
+  if(!gradingActive){ panel.innerHTML = '<div class="empty">Select a student to begin scoring.</div>'; return; }
+  const r = responses.find(x => x.name === gradingActive);
+  if(!grades[gradingActive]) grades[gradingActive] = {comment:''};
+  const g = grades[gradingActive];
+  const t = totalFor(gradingActive);
+  let html = `<h2>${gradingActive}</h2><div class="total">Total: ${t==null?'Not started':t+' / 16'}</div>`;
+  html += renderSubmissionView(r);
+  CRITERIA.forEach(c => {
+    html += `<div class="crit"><b class="critname">${c.name}</b><div class="scorebtns" data-key="${c.key}">`;
+    [4,3,2,1].forEach(lvl => {
+      const has = c.levels[lvl] != null; const sel = g[c.key]===lvl;
+      html += `<button class="sbtn${sel?' sel':''}" data-key="${c.key}" data-lvl="${lvl}"${has?'':' disabled'}>${lvl}</button>`;
+    });
+    html += `</div><div class="critdesc" id="desc-${c.key}">${g[c.key]!=null && c.levels[g[c.key]] ? c.levels[g[c.key]] : 'Select a score to see the rubric description.'}</div></div>`;
+  });
+  html += `<div class="crit"><b class="critname">Notes, optional</b><textarea class="notesbox" id="noteBox" placeholder="Any notes for this student">${g.comment||''}</textarea></div>`;
+  panel.innerHTML = html;
+  panel.querySelectorAll('.sbtn').forEach(b => {
+    b.onclick = () => { const key=b.dataset.key, lvl=parseInt(b.dataset.lvl,10); g[key] = (g[key]===lvl)?null:lvl; saveGrades(); renderGradingPanel(); renderGradingRoster(); renderGradingSummary(); };
+  });
+  const noteBox = document.getElementById('noteBox');
+  noteBox.oninput = () => { g.comment = noteBox.value; saveGrades(); };
+}
+function renderSubmissionView(r){
+  if(!r) return '';
+  let html = '<div class="submission-view"><h3>Proposed features</h3>';
+  (r.newFeatures||[]).forEach((nf,i) => { html += `<div class="feat"><b>${nf.name||'(untitled '+(i+1)+')'}</b><br>${nf.description||''}</div>`; });
+  if(!r.newFeatures || !r.newFeatures.length) html += '<div class="feat">Not submitted.</div>';
+  html += '</div><div class="submission-view"><h3>Pitch</h3>';
+  const pitched = (r.newFeatures && r.newFeatures[r.pitchFeature]) ? (r.newFeatures[r.pitchFeature].name || 'Feature '+((r.pitchFeature||0)+1)) : null;
+  html += `<div class="feat">${pitched?('<b>'+pitched+'</b><br>'):''}${r.pitch||'Not submitted.'}</div>`;
+  html += '</div>';
+  if(r.justification){ html += `<div class="submission-view"><h3>Overall justification</h3><div class="feat">${r.justification}</div></div>`; }
+  return html;
+}
+function renderGradingSummary(){
+  const wrap = document.getElementById('summaryTable'); const list = gradingRoster();
+  if(!list.length){ wrap.innerHTML = '<div class="empty">No responses loaded.</div>'; return; }
+  let html = '<table><thead><tr><th>Student</th><th>Kano model</th><th>Creativity</th><th>CTO pitch</th><th>Justification</th><th>Total</th></tr></thead><tbody>';
+  list.forEach(r => {
+    const g = grades[r.name] || {}; const t = totalFor(r.name);
+    html += `<tr><td>${r.name}</td>`;
+    CRITERIA.forEach(c => { html += `<td class="num">${g[c.key]!=null?g[c.key]:'Pending'}</td>`; });
+    html += `<td class="num">${t==null?'Pending':t+' / 16'}</td></tr>`;
+  });
+  html += '</tbody></table>'; wrap.innerHTML = html;
+}
+document.getElementById('exportCsv').onclick = () => {
+  const list = gradingRoster();
+  let csv = 'Student,Application of the Kano Model,Creativity of New Features,CTO Investment Pitch,Overall Justification,Total,Notes\n';
+  list.forEach(r => {
+    const g = grades[r.name] || {}; const t = totalFor(r.name);
+    const row = [r.name];
+    CRITERIA.forEach(c => row.push(g[c.key]!=null?g[c.key]:''));
+    row.push(t==null?'':t);
+    row.push('"'+((g.comment||'').replace(/"/g,'""'))+'"');
+    csv += row.join(',')+'\n';
+  });
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'PACS_Kano_Grades.csv'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+/* ---------- answer key editor ---------- */
+function renderKeyEditor(){
+  const box = document.getElementById('keyRows'); box.innerHTML = '';
+  FEATURES.forEach((f,fi) => {
+    if(!answerKey[fi]) answerKey[fi] = {cat:null, exec:null};
+    const row = document.createElement('div'); row.className = 'keyrow';
+    const catOpts = ['<option value="">—</option>'].concat(CATEGORIES.map(c => `<option value="${c}" ${answerKey[fi].cat===c?'selected':''}>${c}</option>`)).join('');
+    const execOpts = ['<option value="">—</option>'].concat(EXEC_LEVELS.map(x => `<option value="${x}" ${answerKey[fi].exec===x?'selected':''}>${x}</option>`)).join('');
+    row.innerHTML = `<b>${fi+1}. ${f}</b><select data-fi="${fi}" data-field="cat">${catOpts}</select><select data-fi="${fi}" data-field="exec">${execOpts}</select>`;
+    box.appendChild(row);
+  });
+  box.querySelectorAll('select').forEach(sel => {
+    sel.onchange = () => { answerKey[+sel.dataset.fi][sel.dataset.field] = sel.value || null; document.getElementById('keyMsg').textContent = 'Unsaved changes — download to make permanent.'; };
+  });
+}
+document.getElementById('downloadKeyBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify({entries:answerKey}, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'answer-key.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  document.getElementById('keyMsg').textContent = 'Downloaded. Replace data/answer-key.json in your repo with this file and push to make it live.';
+};
+
+/* ---------- danger zone ---------- */
+document.getElementById('clearAllBtn').onclick = async () => {
+  const msg = document.getElementById('dangerMsg');
+  if(document.getElementById('confirmDelete').value !== 'DELETE'){ msg.textContent = 'Type DELETE in the box first.'; return; }
+  if(!backendConfigured()){ msg.textContent = 'Backend not configured — nothing to clear.'; return; }
+  msg.textContent = 'Clearing…';
+  try{
+    const body = JSON.stringify({action:'clearAll', password: INSTRUCTOR_PASSWORD});
+    const res = await fetch(APPS_SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body});
+    const r = await res.json();
+    msg.textContent = r && r.ok ? 'All responses cleared.' : 'Could not clear responses.';
+    if(r && r.ok) refreshResponses();
+  }catch(err){ msg.textContent = 'Could not reach the backend.'; }
+};
+document.getElementById('clearGradesBtn').onclick = () => {
+  grades = {}; localStorage.removeItem('pacskano_grades');
+  renderGradingRoster(); renderGradingPanel(); renderGradingSummary();
+  document.getElementById('dangerMsg').textContent = 'Local grades cleared.';
+};
+</script>
+</body>
+</html>

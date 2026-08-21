@@ -44,6 +44,7 @@
       <h2>Part 1 — Classify each feature</h2>
       <div class="progress" id="progressText">0 / 20 classified</div>
       <div id="featureList"></div>
+      <div id="catTooltip" class="tooltip fixed"></div>
     </section>
 
     <section class="card section">
@@ -207,16 +208,34 @@ function renderFeatureList(){
     let execRow = '<div class="pillrow">' + EXEC_LEVELS.map(x =>
       `<button type="button" class="pillbtn" data-fi="${fi}" data-exec="${x}">${x}</button>`
     ).join('') + '</div>';
-    card.innerHTML = `<b>${fi+1}. ${f}</b><p class="desc">${DESCRIPTIONS[fi]}</p>${catRow}${execRow}`;
+    card.innerHTML = `<b>${fi+1}. ${f}</b><p class="desc">${DESCRIPTIONS[fi]}</p>
+      <div class="pillgroup">
+        <div class="pillgroup-label">Satisfaction — how does this feature affect satisfaction?</div>
+        ${catRow}
+      </div>
+      <div class="pillgroup-divider"></div>
+      <div class="pillgroup">
+        <div class="pillgroup-label">Current execution — how well is this typically done today?</div>
+        ${execRow}
+      </div>`;
     box.appendChild(card);
   });
   syncPillStates();
+  const tip = document.getElementById('catTooltip');
   box.querySelectorAll('.pillbtn[data-cat]').forEach(btn => {
     btn.onclick = () => {
       const fi = +btn.dataset.fi;
       state.answers[fi] = (state.answers[fi] === btn.dataset.cat) ? null : btn.dataset.cat;
       syncPillStates(); updateProgress();
     };
+    btn.addEventListener('mouseenter', e => {
+      tip.textContent = CATEGORY_EXPLAIN[btn.dataset.cat](FEATURES[+btn.dataset.fi]);
+      tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; tip.style.opacity = 1;
+    });
+    btn.addEventListener('mousemove', e => {
+      tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px';
+    });
+    btn.addEventListener('mouseleave', () => { tip.style.opacity = 0; });
   });
   box.querySelectorAll('.pillbtn[data-exec]').forEach(btn => {
     btn.onclick = () => {

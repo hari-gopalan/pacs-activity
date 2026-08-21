@@ -32,6 +32,16 @@ const EXEC_LEVELS = ["Poorly done","Adequate","Well done"];
 const COLORS = {"Attractive":"#1d78c9","Performance":"#b8790f","Must-Be":"#c22b6d","Indifferent":"#71808f"};
 const EXEC_T = {"Poorly done":.12,"Adequate":.5,"Well done":.88};
 
+/* Per-category explanation, templated with the feature's name. Shown as a
+   hover tooltip on each category pill (student.html) instead of a static
+   legend, so the explanation is specific to the feature being classified. */
+const CATEGORY_EXPLAIN = {
+ "Attractive": f => `${f} is a pleasant surprise when it's present — nobody misses it if it's absent.`,
+ "Performance": f => `Satisfaction with ${f} rises the better it's executed, and falls the worse it's done.`,
+ "Must-Be": f => `It is expected that ${f} is in the PACS software by default, and its absence causes real frustration.`,
+ "Indifferent": f => `Users notice little change either way if ${f} is well done or poorly done.`
+};
+
 const CRITERIA = [
  {key:'kano', name:'Application of the Kano Model', levels:{4:'Features are placed appropriately, with at least half of the placements being reasonable and demonstrating an understanding of the importance of each PACS feature to the end user.', 1:'Placement demonstrates poor understanding of PACS features and how they relate to the end user.'}},
  {key:'creativity', name:'Creativity of New Features', levels:{4:'Three creative, appropriate, and relevant PACS features are proposed that demonstrate thoughtful consideration of future user needs.', 3:'Three relevant features are proposed with some creativity.', 2:'Features are somewhat relevant but lack originality or value to the user.', 1:'Features are inappropriate, incomplete, or missing.'}},

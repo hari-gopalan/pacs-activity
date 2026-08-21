@@ -84,11 +84,16 @@ yourself.
 2. `instructor.html` polls the same Apps Script URL every 20 seconds (and on
    demand via **Refresh now**), listing every submission — draft or
    submitted — in the Responses panel. There's no manual file loading.
-3. Pick any one of those responses from the **Compare against** dropdown to
-   use it as the reference plotted on the graph (e.g. your own answers, if
-   you did the activity yourself first). This choice is remembered in your
-   browser between visits. There's no separate hand-authored answer key —
-   an actual submission is your ground truth.
+3. Pick any one of those responses from the **Mark as the instructor's
+   answer** dropdown to use it as the reference plotted on the graph (e.g.
+   your own answers, if you did the activity yourself first). That choice
+   is stored server-side (via `PropertiesService`, not a sheet column), so
+   it's shared with anyone else who opens the instructor page — not just
+   remembered in the browser that set it. There's no separate hand-authored
+   answer key — an actual submission is your ground truth.
+4. Hover a response row and click **Remove** to permanently delete a single
+   submission (e.g. a test entry) without wiping everyone else's — unlike
+   Danger zone's "Clear all responses," which deletes every row.
 
 ## Privacy cleanup after the assignment
 

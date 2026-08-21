@@ -27,7 +27,7 @@
   <div class="title-block">
     <span class="eyebrow">MSRT300 · Instructor Console</span>
     <h1>PACS Kano Comparator</h1>
-    <div class="muted">Student submissions load automatically from the response sheet, draft or submitted. Pick one below to use as your reference for comparison.</div>
+    <div class="muted">Student submissions load automatically from the response sheet, draft or submitted. Mark one as the instructor's answer to use it as the comparison reference — shared with anyone else who opens this page.</div>
   </div>
   <div class="toolbar">
     <span class="muted" id="syncStatus" style="font-family:var(--mono);font-size:11px"></span>
@@ -45,7 +45,7 @@
 <section class="card side">
   <b class="h">Responses</b>
   <div class="ref-picker">
-    <label for="referenceSelect">Compare against</label>
+    <label for="referenceSelect">Mark as the instructor's answer</label>
     <select id="referenceSelect"><option value="">None</option></select>
   </div>
   <div id="people"></div>
@@ -172,7 +172,7 @@
    that access would throw (temporal dead zone) instead of initializing. */
 let responses = [];       // real student submissions only, draft or submitted
 let groundTruthIndex = -1;
-let referenceName = localStorage.getItem('pacskano_reference_name') || '';
+let instructorName = '';  // whichever response is marked as the instructor's; server-persisted, falls back to localStorage when no backend
 let focus = null, pinned = false;
 let grades = {};
 let gradingActive = null;
@@ -223,6 +223,7 @@ async function refreshResponses(){
   if(!backendConfigured()){
     statusEl.textContent = 'Backend not configured — see README';
     responses = [];
+    instructorName = localStorage.getItem('pacskano_instructor_name') || '';
     render();
     return;
   }
@@ -231,6 +232,9 @@ async function refreshResponses(){
     const res = await fetch(APPS_SCRIPT_URL + '?action=list', {cache:'no-store'});
     const data = await res.json();
     responses = (data && data.ok && Array.isArray(data.responses)) ? data.responses : [];
+    // Older deployments of Code.gs won't send instructorName yet -- fall back
+    // to whatever was locally set until Code.gs is redeployed with this field.
+    instructorName = (data && typeof data.instructorName === 'string') ? data.instructorName : (localStorage.getItem('pacskano_instructor_name') || '');
     statusEl.textContent = 'Synced ' + new Date().toLocaleTimeString();
   }catch(err){
     statusEl.textContent = 'Sync failed — showing last loaded data';
@@ -238,13 +242,43 @@ async function refreshResponses(){
   render();
 }
 
-document.getElementById('refreshBtn').onclick = refreshResponses;
-document.getElementById('referenceSelect').onchange = e => {
-  referenceName = e.target.value;
-  if(referenceName) localStorage.setItem('pacskano_reference_name', referenceName);
-  else localStorage.removeItem('pacskano_reference_name');
+async function setInstructor(name){
+  instructorName = name;
+  if(backendConfigured()){
+    try{
+      const body = JSON.stringify({action:'setInstructor', password: INSTRUCTOR_PASSWORD, name});
+      const res = await fetch(APPS_SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body});
+      const r = await res.json();
+      if(!r || !r.ok){
+        // Most likely an old Code.gs deployment that doesn't know this action yet.
+        // Keep it working locally rather than silently losing the selection.
+        if(name) localStorage.setItem('pacskano_instructor_name', name); else localStorage.removeItem('pacskano_instructor_name');
+      }
+    }catch(err){
+      if(name) localStorage.setItem('pacskano_instructor_name', name); else localStorage.removeItem('pacskano_instructor_name');
+    }
+  } else {
+    if(name) localStorage.setItem('pacskano_instructor_name', name); else localStorage.removeItem('pacskano_instructor_name');
+  }
   render();
-};
+}
+
+async function deleteResponse(name){
+  if(!confirm('Permanently remove "' + name + '"’s response? This cannot be undone.')) return;
+  if(!backendConfigured()){ alert('Backend not configured — nothing to delete.'); return; }
+  try{
+    const body = JSON.stringify({action:'deleteResponse', password: INSTRUCTOR_PASSWORD, name});
+    const res = await fetch(APPS_SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body});
+    const r = await res.json();
+    if(r && r.ok) refreshResponses();
+    else alert('Could not delete that response' + (r && r.error === 'unknown_action' ? ' — redeploy the latest Code.gs first.' : '.'));
+  }catch(err){
+    alert('Could not reach the backend.');
+  }
+}
+
+document.getElementById('refreshBtn').onclick = refreshResponses;
+document.getElementById('referenceSelect').onchange = e => setInstructor(e.target.value);
 
 /* ---------- tabs ---------- */
 function showTab(name){
@@ -264,12 +298,11 @@ function wireStaticHandlers(){
 
 /* ---------- comparator (graph) ---------- */
 function render(){
-  groundTruthIndex = referenceName ? responses.findIndex(r => r.name === referenceName) : -1;
+  groundTruthIndex = instructorName ? responses.findIndex(r => r.name === instructorName) : -1;
 
   const refSel = document.getElementById('referenceSelect');
-  const curSelVal = referenceName;
   refSel.innerHTML = '<option value="">None</option>' + responses.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
-  refSel.value = responses.some(r => r.name === curSelVal) ? curSelVal : '';
+  refSel.value = responses.some(r => r.name === instructorName) ? instructorName : '';
 
   const ppl = document.getElementById('people');
   if(!responses.length){
@@ -282,9 +315,10 @@ function render(){
       row.className = 'person' + (isGT ? ' gt' : '');
       const classified = (r.answers||[]).filter(Boolean).length;
       const statusTag = r.status ? ` · ${r.status}` : '';
-      row.innerHTML = `<div class="prow"><b>${r.name}</b>${isGT?'<span class="gtbadge">Reference</span>':''}</div><small>${classified} / ${FEATURES.length} classified${statusTag}</small>`;
+      row.innerHTML = `<div class="prow"><span><b>${r.name}</b>${isGT?'<span class="gtbadge">Instructor</span>':''}</span><button type="button" class="rm-btn" data-name="${r.name}" title="Remove this response">Remove</button></div><small>${classified} / ${FEATURES.length} classified${statusTag}</small>`;
       ppl.appendChild(row);
     });
+    ppl.querySelectorAll('.rm-btn').forEach(b => { b.onclick = e => { e.stopPropagation(); deleteResponse(b.dataset.name); }; });
   }
   document.getElementById('readoutCount').textContent = 'RESPONDENTS ' + responses.length;
   computePositions();
@@ -341,7 +375,7 @@ function renderAnswerPanel(fi){
   responses.forEach((r,pi) => {
     const cat = r.answers[fi]; const exec = r.executions ? r.executions[fi] : null; const isGT = pi===groundTruthIndex;
     const row = document.createElement('div'); row.className = 'ap-row';
-    row.innerHTML = `<span class="dot" style="background:${cat?COLORS[cat]:'#c7ced6'}"></span><b>${r.name}</b>${isGT?'<span class="tag-gt">Reference</span>':''}<span class="cat" style="color:${cat?COLORS[cat]:'#8b95a1'}">${cat||'Not answered'}</span><span class="exec">${exec||''}</span>`;
+    row.innerHTML = `<span class="dot" style="background:${cat?COLORS[cat]:'#c7ced6'}"></span><b>${r.name}</b>${isGT?'<span class="tag-gt">Instructor</span>':''}<span class="cat" style="color:${cat?COLORS[cat]:'#8b95a1'}">${cat||'Not answered'}</span><span class="exec">${exec||''}</span>`;
     list.appendChild(row);
   });
   panel.style.display = 'block';

@@ -9,14 +9,21 @@
  *   name | pin | status | timestamp | dataJSON
  * dataJSON holds the full submission (answers, executions, justification)
  * as a JSON string, so the sheet stays simple regardless of schema changes.
+ *
+ * Which response is "the instructor's" (used as the comparator's reference)
+ * is stored separately via PropertiesService, not as a sheet column, so it's
+ * shared across every instructor session/device rather than living in one
+ * browser's localStorage.
  */
 
 // Must match INSTRUCTOR_PASSWORD in assets/config.js — required to clear all
-// responses. Kept server-side too so the "clear everything" action can't be
-// triggered just by knowing the client-side password is client-visible.
+// responses, mark a response as the instructor's, or delete a single
+// response. Kept server-side too so these actions can't be triggered just by
+// knowing the client-side password is client-visible.
 const SERVER_PASSWORD = 'harigopalan';
 const SHEET_NAME = 'Responses';
 const HEADERS = ['name', 'pin', 'status', 'timestamp', 'dataJSON'];
+const INSTRUCTOR_NAME_PROP = 'instructorName';
 
 function getSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -59,7 +66,8 @@ function doGet(e) {
         // pin intentionally omitted
       }));
     }
-    return jsonOut_({ ok: true, responses: responses });
+    const instructorName = PropertiesService.getScriptProperties().getProperty(INSTRUCTOR_NAME_PROP) || '';
+    return jsonOut_({ ok: true, responses: responses, instructorName: instructorName });
   }
   return jsonOut_({ ok: false, error: 'unknown_action' });
 }
@@ -102,6 +110,25 @@ function doPost(e) {
     if (body.password !== SERVER_PASSWORD) return jsonOut_({ ok: false, error: 'bad_password' });
     const lastRow = sheet.getLastRow();
     if (lastRow > 1) sheet.getRange(2, 1, lastRow - 1, HEADERS.length).clearContent();
+    PropertiesService.getScriptProperties().deleteProperty(INSTRUCTOR_NAME_PROP);
+    return jsonOut_({ ok: true });
+  }
+
+  if (action === 'setInstructor') {
+    if (body.password !== SERVER_PASSWORD) return jsonOut_({ ok: false, error: 'bad_password' });
+    const props = PropertiesService.getScriptProperties();
+    if (body.name) props.setProperty(INSTRUCTOR_NAME_PROP, body.name);
+    else props.deleteProperty(INSTRUCTOR_NAME_PROP);
+    return jsonOut_({ ok: true });
+  }
+
+  if (action === 'deleteResponse') {
+    if (body.password !== SERVER_PASSWORD) return jsonOut_({ ok: false, error: 'bad_password' });
+    const rowNum = findRow_(sheet, body.name);
+    if (rowNum === -1) return jsonOut_({ ok: false, error: 'not_found' });
+    sheet.deleteRow(rowNum);
+    const props = PropertiesService.getScriptProperties();
+    if (props.getProperty(INSTRUCTOR_NAME_PROP) === body.name) props.deleteProperty(INSTRUCTOR_NAME_PROP);
     return jsonOut_({ ok: true });
   }
 

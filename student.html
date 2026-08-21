@@ -109,6 +109,12 @@
             <div class="key-item"><div class="row"><i style="background:var(--mustbe)"></i><b>Must-Be</b></div><p>Expected by default, its absence causes real frustration.</p></div>
             <div class="key-item"><div class="row"><i style="background:var(--indifferent)"></i><b>Indifferent</b></div><p>Users notice little change either way.</p></div>
           </div>
+          <div class="exec-key">
+            <b>Marker size = execution quality</b>
+            <span class="swatch"><i style="width:13px;height:13px"></i>Poorly done</span>
+            <span class="swatch"><i style="width:17px;height:17px"></i>Adequate</span>
+            <span class="swatch"><i style="width:21px;height:21px"></i>Well done</span>
+          </div>
         </div>
 
         <div class="side" id="featureListWrap">
@@ -341,6 +347,11 @@ function smoothDamp(current, target, vel, smoothTime, dt){
 function paintMarker(mk){
   mk.circle.setAttribute('cx', mk.x); mk.circle.setAttribute('cy', mk.y);
   mk.text.setAttribute('x', mk.x); mk.text.setAttribute('y', mk.y+3.2);
+  // leader line: fixed at the curve anchor on one end, follows the marker's
+  // current (possibly still-animating) position on the other -- so it stays
+  // correct mid-glide, not just once settled.
+  mk.leader.setAttribute('x1', mk.anchorX); mk.leader.setAttribute('y1', mk.anchorY);
+  mk.leader.setAttribute('x2', mk.x); mk.leader.setAttribute('y2', mk.y);
 }
 
 function startAnimLoop(){
@@ -375,9 +386,10 @@ function refreshGraph(){
     if(!cat) return;
     const exec = state.executions[fi];
     const p = point(cat, fi, 0, exec);
-    items.push({x:p.x, y:p.y, r:8.5, fi});
+    const r = EXEC_RADIUS[exec] || 8.5;
+    items.push({x:p.x, y:p.y, r, fi, anchorX:p.anchorX, anchorY:p.anchorY});
   });
-  resolveCollisions(items, 4);
+  resolveCollisions(items, 4, 0.4); // 0.4: bias spread to be mostly horizontal, along each category's own lane
   const targets = new Map(items.map(it => [it.fi, it]));
   const m = document.getElementById('markers');
 
@@ -393,32 +405,38 @@ function refreshGraph(){
 
   targets.forEach((it, fi) => {
     const cat = state.answers[fi];
+    const exec = state.executions[fi];
+    const r = EXEC_RADIUS[exec] || 8.5;
     let mk = markerEls.get(fi);
     if(!mk){
       // reuse a node still mid fade-out for this same feature, if any, instead of stacking a duplicate
       let g = m.querySelector('g.marker[data-fi="'+fi+'"]');
-      let circle, text;
+      let circle, text, leader;
       if(g){
         if(g.__leaveAbort){ g.__leaveAbort.abort(); g.__leaveAbort = null; }
         g.classList.remove('leaving');
-        circle = g.querySelector('circle'); text = g.querySelector('text');
+        circle = g.querySelector('circle'); text = g.querySelector('text'); leader = g.querySelector('line');
       } else {
         g = document.createElementNS('http://www.w3.org/2000/svg','g');
         g.classList.add('marker','entering');
         g.dataset.fi = fi;
-        g.innerHTML = `<circle class="mkr" r="8.5" stroke="#fdfefe" stroke-width="1.6"/><text text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="600" fill="#fff">${fi+1}</text>`;
-        circle = g.querySelector('circle'); text = g.querySelector('text');
+        // leader line drawn first so the marker circle renders on top of it
+        g.innerHTML = `<line class="leader"/><circle class="mkr" stroke="#fdfefe" stroke-width="1.6"/><text text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="600" fill="#fff">${fi+1}</text>`;
+        leader = g.querySelector('line'); circle = g.querySelector('circle'); text = g.querySelector('text');
         g.addEventListener('mouseenter', e => showTipHtml(e, markerTipHtml(fi)));
         g.addEventListener('mousemove', positionTip);
         g.addEventListener('mouseleave', hideTip);
         m.appendChild(g);
         requestAnimationFrame(() => g.classList.remove('entering'));
       }
-      mk = {g, circle, text, x:it.x, y:it.y, vx:{v:0}, vy:{v:0}};
+      mk = {g, circle, text, leader, x:it.x, y:it.y, anchorX:it.anchorX, anchorY:it.anchorY, vx:{v:0}, vy:{v:0}};
       markerEls.set(fi, mk);
       paintMarker(mk);
     }
     mk.circle.setAttribute('fill', COLORS[cat]);
+    mk.circle.setAttribute('r', r);
+    mk.leader.setAttribute('stroke', COLORS[cat]);
+    mk.anchorX = it.anchorX; mk.anchorY = it.anchorY;
     mk.tx = it.x; mk.ty = it.y;
   });
 

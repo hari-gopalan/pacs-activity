@@ -163,6 +163,7 @@ svg{width:100%;height:auto;display:block}
 .marker.focus circle.mkr{stroke:#151b23;stroke-width:2.6}
 .marker.entering{opacity:0;transform:scale(.35)}
 .marker.leaving{opacity:0;transform:scale(.35)}
+.marker .leader{stroke-width:1.3;opacity:.45;stroke-linecap:round}
 .axis-hint{cursor:help}
 .axis-hint text{text-decoration:underline;text-decoration-style:dotted;text-decoration-color:#b7c0ca;text-underline-offset:4px}
 
@@ -172,6 +173,11 @@ svg{width:100%;height:auto;display:block}
 .key-item i{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
 .key-item b{font-family:var(--body);font-size:13px;font-weight:700;color:var(--ink)}
 .key-item p{margin:0;font-size:12px;color:var(--ink-faint);line-height:1.45}
+
+.exec-key{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:10px;padding:10px 14px;border:1px solid var(--line-soft);border-radius:12px;background:var(--panel-2)}
+.exec-key b{font-family:var(--body);font-size:12px;font-weight:700;color:var(--ink-dim);flex:none}
+.exec-key .swatch{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-faint)}
+.exec-key i{display:inline-block;border-radius:50%;background:var(--ink-faint);flex:none}
 
 .tooltip{position:absolute;background:#151b23;color:#fdfefe;padding:11px 14px;border-radius:11px;font-size:12.5px;line-height:1.45;pointer-events:none;opacity:0;z-index:10;max-width:270px;transform:translate(-50%,-118%) scale(.94);transform-origin:bottom center;box-shadow:0 14px 34px rgba(20,30,45,.3);font-family:var(--body);transition:opacity .12s var(--ease-spring),transform .12s var(--ease-spring)}
 .tooltip.show{opacity:1;transform:translate(-50%,-118%) scale(1)}

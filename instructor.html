@@ -124,6 +124,13 @@
     <div class="key-item"><div class="row"><i style="background:var(--mustbe)"></i><b>Must-Be</b></div><p>Expected by default, its absence causes real frustration.</p></div>
     <div class="key-item"><div class="row"><i style="background:var(--indifferent)"></i><b>Indifferent</b></div><p>Users notice little change either way.</p></div>
   </div>
+  <div class="exec-key">
+    <b>Marker size = execution quality</b>
+    <span class="swatch"><i style="width:13px;height:13px"></i>Poorly done</span>
+    <span class="swatch"><i style="width:17px;height:17px"></i>Adequate</span>
+    <span class="swatch"><i style="width:21px;height:21px"></i>Well done</span>
+    <span class="swatch"><i style="width:17px;height:17px;border:2px solid var(--accent);background:none"></i>Ring = instructor's answer</span>
+  </div>
 </section>
 </main>
 
@@ -329,8 +336,12 @@ function render(){
     const p = posGrid[pi][fi];
     const isGT = pi === groundTruthIndex;
     const g = document.createElementNS('http://www.w3.org/2000/svg','g'); g.classList.add('marker'); g.dataset.feature = fi;
-    const ring = isGT ? `<circle cx="${p.x}" cy="${p.y}" r="15" fill="none" stroke="var(--accent)" stroke-width="2"/>` : '';
-    g.innerHTML = `${ring}<circle class="mkr" cx="${p.x}" cy="${p.y}" r="${isGT?10:8.5}" fill="${tint(COLORS[cat],pi)}" stroke="#fdfefe" stroke-width="${isGT?2.2:1.6}"/><text x="${p.x}" y="${p.y+3.2}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="600" fill="${tintAlpha(pi)<.35?'#fff':'#151b23'}">${fi+1}</text>`;
+    const ring = isGT ? `<circle cx="${p.x}" cy="${p.y}" r="${p.r+5}" fill="none" stroke="var(--accent)" stroke-width="2"/>` : '';
+    // leader line first so the marker circle renders on top of it -- ties
+    // the marker back to its exact point on the reference curve, which
+    // matters most right where two curves visually converge (e.g. Must-Be
+    // done well vs. Indifferent).
+    g.innerHTML = `${ring}<line class="leader" x1="${p.anchorX}" y1="${p.anchorY}" x2="${p.x}" y2="${p.y}" stroke="${COLORS[cat]}"/><circle class="mkr" cx="${p.x}" cy="${p.y}" r="${p.r}" fill="${tint(COLORS[cat],pi)}" stroke="#fdfefe" stroke-width="1.6"/><text x="${p.x}" y="${p.y+3.2}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="600" fill="${tintAlpha(pi)<.35?'#fff':'#151b23'}">${fi+1}</text>`;
     g.onmouseenter = e => showTip(e,r.name,FEATURES[fi],cat,exec);
     g.onmouseleave = () => hideTip();
     g.onclick = e => { e.stopPropagation(); selectFeature(fi); if(focus===fi){ showTip(e,r.name,FEATURES[fi],cat,exec); pinned=true; document.getElementById('tooltip').classList.add('pinned'); } };
@@ -348,10 +359,10 @@ function computePositions(){
     const exec = r.executions ? r.executions[fi] : null;
     const base = point(cat,fi,pi,exec);
     const isGT = pi === groundTruthIndex;
-    const item = {x:base.x, y:base.y, r:isGT?10:8.5, pi, fi};
+    const item = {x:base.x, y:base.y, r:(EXEC_RADIUS[exec]||8.5)+(isGT?2:0), pi, fi, anchorX:base.anchorX, anchorY:base.anchorY};
     items.push(item); posGrid[pi][fi] = item;
   }));
-  resolveCollisions(items,4);
+  resolveCollisions(items,4,0.4); // bias spread to be mostly horizontal, along each category's own lane
 }
 function showTip(e,name,feature,cat,exec){
   if(pinned) return;

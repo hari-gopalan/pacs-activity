@@ -9,5 +9,5 @@
    view; it is NOT real authentication and should never guard anything
    actually sensitive. */
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVDP2tZbDzh5ikO5dFLy-ZjRzisUxmqcYDjo9XXLQKG0XrfL2f6OhtosRwOpSfnldssQ/exec";
+const APPS_SCRIPT_URL = https://script.google.com/macros/s/AKfycbykJbdAqxYBzXukQHd0q8K8_vbLtbYdeapG-jA6ypHDsUrMwGmhqZJTQS0uv4fb0oS9EQ/exec;
 const INSTRUCTOR_PASSWORD = "harigopalan";

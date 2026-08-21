@@ -249,9 +249,9 @@ function updateProgress(){
 /* ---------- shared hover tooltip (category pills, graph markers, axis hints) ---------- */
 const tip = document.getElementById('hoverTip');
 function positionTip(e){ tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; }
-function showTipText(e, text){ tip.textContent = text; positionTip(e); tip.style.opacity = 1; }
-function showTipHtml(e, html){ tip.innerHTML = html; positionTip(e); tip.style.opacity = 1; }
-function hideTip(){ tip.style.opacity = 0; }
+function showTipText(e, text){ tip.textContent = text; positionTip(e); tip.classList.add('show'); }
+function showTipHtml(e, html){ tip.innerHTML = html; positionTip(e); tip.classList.add('show'); }
+function hideTip(){ tip.classList.remove('show'); }
 document.querySelectorAll('.axis-hint').forEach(el => {
   el.addEventListener('mouseenter', e => { if(el.dataset.tip) showTipText(e, el.dataset.tip); });
   el.addEventListener('mousemove', e => { if(el.dataset.tip) positionTip(e); });
@@ -311,10 +311,64 @@ function syncPillStates(){
   });
 }
 
-/* ---------- live graph of the student's own placements ---------- */
+/* ---------- live graph of the student's own placements ----------
+   Markers are persistent DOM nodes that glide to their new position
+   with a critically-damped spring (SmoothDamp) instead of teleporting,
+   so reclassifying a feature reads as movement, not a jump cut. The
+   animation loop is interruptible: if a marker is re-targeted mid-flight
+   (student changes their mind again), it redirects from wherever it
+   currently is, carrying its velocity, rather than restarting. */
+const markerEls = new Map(); // fi -> {g, circle, text, x, y, vx:{v}, vy:{v}, tx, ty}
+const reducedMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+let animHandle = null;
+
+function smoothDamp(current, target, vel, smoothTime, dt){
+  smoothTime = Math.max(.0001, smoothTime);
+  const omega = 2/smoothTime;
+  const x = omega*dt;
+  const exp = 1/(1+x+.48*x*x+.235*x*x*x);
+  const change = current - target;
+  const temp = (vel.v + omega*change)*dt;
+  vel.v = (vel.v - omega*temp)*exp;
+  let output = target + (change+temp)*exp;
+  if((target - current > 0) === (output > target)){
+    output = target;
+    vel.v = (output - current)/dt;
+  }
+  return output;
+}
+
+function paintMarker(mk){
+  mk.circle.setAttribute('cx', mk.x); mk.circle.setAttribute('cy', mk.y);
+  mk.text.setAttribute('x', mk.x); mk.text.setAttribute('y', mk.y+3.2);
+}
+
+function startAnimLoop(){
+  if(animHandle) return;
+  let last = performance.now();
+  function step(now){
+    const dt = Math.min(.05, (now-last)/1000) || 1/60; last = now;
+    let moving = false;
+    markerEls.forEach(mk => {
+      const settled = Math.abs(mk.x-mk.tx) < .05 && Math.abs(mk.y-mk.ty) < .05 && Math.abs(mk.vx.v) < .5 && Math.abs(mk.vy.v) < .5;
+      if(settled){ mk.x = mk.tx; mk.y = mk.ty; }
+      else { mk.x = smoothDamp(mk.x, mk.tx, mk.vx, .35, dt); mk.y = smoothDamp(mk.y, mk.ty, mk.vy, .35, dt); moving = true; }
+      paintMarker(mk);
+    });
+    animHandle = moving ? requestAnimationFrame(step) : null;
+  }
+  animHandle = requestAnimationFrame(step);
+}
+
+function markerTipHtml(fi){
+  const cat = state.answers[fi], exec = state.executions[fi];
+  return `<b>${fi+1}. ${FEATURES[fi]}</b><br>${cat}${exec ? ' · '+exec : ''}`;
+}
+
 function refreshGraph(){
   const n = state.answers.filter(Boolean).length;
   document.getElementById('markerCount').textContent = 'MARKERS ' + n + ' / ' + FEATURES.length;
+
   const items = [];
   FEATURES.forEach((f, fi) => {
     const cat = state.answers[fi];
@@ -324,19 +378,55 @@ function refreshGraph(){
     items.push({x:p.x, y:p.y, r:8.5, fi});
   });
   resolveCollisions(items, 4);
+  const targets = new Map(items.map(it => [it.fi, it]));
   const m = document.getElementById('markers');
-  m.innerHTML = '';
-  items.forEach(it => {
-    const cat = state.answers[it.fi];
-    const exec = state.executions[it.fi];
-    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
-    g.classList.add('marker');
-    g.innerHTML = `<circle class="mkr" cx="${it.x}" cy="${it.y}" r="8.5" fill="${COLORS[cat]}" stroke="#fdfefe" stroke-width="1.6"/><text x="${it.x}" y="${it.y+3.2}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="600" fill="#fff">${it.fi+1}</text>`;
-    g.addEventListener('mouseenter', e => showTipHtml(e, `<b>${it.fi+1}. ${FEATURES[it.fi]}</b><br>${cat}${exec ? ' · '+exec : ''}`));
-    g.addEventListener('mousemove', positionTip);
-    g.addEventListener('mouseleave', hideTip);
-    m.appendChild(g);
+
+  // features that were classified and no longer are: fade the marker out, then remove it
+  markerEls.forEach((mk, fi) => {
+    if(targets.has(fi)) return;
+    mk.g.classList.add('leaving');
+    const ac = new AbortController();
+    mk.g.__leaveAbort = ac;
+    mk.g.addEventListener('transitionend', () => mk.g.remove(), {once:true, signal:ac.signal});
+    markerEls.delete(fi);
   });
+
+  targets.forEach((it, fi) => {
+    const cat = state.answers[fi];
+    let mk = markerEls.get(fi);
+    if(!mk){
+      // reuse a node still mid fade-out for this same feature, if any, instead of stacking a duplicate
+      let g = m.querySelector('g.marker[data-fi="'+fi+'"]');
+      let circle, text;
+      if(g){
+        if(g.__leaveAbort){ g.__leaveAbort.abort(); g.__leaveAbort = null; }
+        g.classList.remove('leaving');
+        circle = g.querySelector('circle'); text = g.querySelector('text');
+      } else {
+        g = document.createElementNS('http://www.w3.org/2000/svg','g');
+        g.classList.add('marker','entering');
+        g.dataset.fi = fi;
+        g.innerHTML = `<circle class="mkr" r="8.5" stroke="#fdfefe" stroke-width="1.6"/><text text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="600" fill="#fff">${fi+1}</text>`;
+        circle = g.querySelector('circle'); text = g.querySelector('text');
+        g.addEventListener('mouseenter', e => showTipHtml(e, markerTipHtml(fi)));
+        g.addEventListener('mousemove', positionTip);
+        g.addEventListener('mouseleave', hideTip);
+        m.appendChild(g);
+        requestAnimationFrame(() => g.classList.remove('entering'));
+      }
+      mk = {g, circle, text, x:it.x, y:it.y, vx:{v:0}, vy:{v:0}};
+      markerEls.set(fi, mk);
+      paintMarker(mk);
+    }
+    mk.circle.setAttribute('fill', COLORS[cat]);
+    mk.tx = it.x; mk.ty = it.y;
+  });
+
+  if(reducedMotion){
+    markerEls.forEach(mk => { mk.x = mk.tx; mk.y = mk.ty; paintMarker(mk); });
+  } else {
+    startAnimLoop();
+  }
 }
 
 document.getElementById('justificationText').oninput = e => { state.justification = e.target.value; };

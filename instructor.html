@@ -323,9 +323,9 @@ function showTip(e,name,feature,cat,exec){
   if(pinned) return;
   const t = document.getElementById('tooltip'), w = document.getElementById('wrap').getBoundingClientRect();
   document.getElementById('ttBody').innerHTML = `<b>${name}</b><br>${feature}<br><span class="cat" style="color:${cat==='Performance'?'#e3b04f':'#8fc2f0'}">${cat}${exec?' · '+exec:''}</span>`;
-  t.style.left = (e.clientX-w.left)+'px'; t.style.top = (e.clientY-w.top)+'px'; t.style.opacity = 1;
+  t.style.left = (e.clientX-w.left)+'px'; t.style.top = (e.clientY-w.top)+'px'; t.classList.add('show');
 }
-function hideTip(force){ if(pinned && !force) return; const t=document.getElementById('tooltip'); t.style.opacity=0; t.classList.remove('pinned'); }
+function hideTip(force){ if(pinned && !force) return; const t=document.getElementById('tooltip'); t.classList.remove('show','pinned'); }
 document.getElementById('ttClose').onclick = e => { e.stopPropagation(); pinned=false; hideTip(true); focus=null; clearFocus(); hideAnswerPanel(); };
 function applyFocus(fi){ document.querySelectorAll('.marker').forEach(m => { const same = +m.dataset.feature===fi; m.classList.toggle('dim',!same); m.classList.toggle('focus',same); }); }
 function clearFocus(){ document.querySelectorAll('.marker').forEach(m => m.classList.remove('dim','focus')); }
@@ -361,9 +361,9 @@ document.getElementById('wrap').addEventListener('click', () => { focus=null; cl
 document.getElementById('apClose').onclick = () => { focus=null; clearFocus(); pinned=false; hideTip(true); hideAnswerPanel(); };
 const tipEl = document.getElementById('tooltip'), wrapEl = document.getElementById('wrap');
 document.querySelectorAll('.axis-hint').forEach(el => {
-  el.addEventListener('mouseenter', e => { if(el.dataset.tip && !pinned){ document.getElementById('ttBody').textContent = el.dataset.tip; tipEl.style.opacity=1; positionTip(e); } });
+  el.addEventListener('mouseenter', e => { if(el.dataset.tip && !pinned){ document.getElementById('ttBody').textContent = el.dataset.tip; tipEl.classList.add('show'); positionTip(e); } });
   el.addEventListener('mousemove', e => { if(el.dataset.tip && !pinned) positionTip(e); });
-  el.addEventListener('mouseleave', () => { if(!pinned) tipEl.style.opacity=0; });
+  el.addEventListener('mouseleave', () => { if(!pinned) tipEl.classList.remove('show'); });
 });
 function positionTip(e){ const r = wrapEl.getBoundingClientRect(); tipEl.style.left=(e.clientX-r.left)+'px'; tipEl.style.top=(e.clientY-r.top)+'px'; }
 

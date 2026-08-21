@@ -8,13 +8,11 @@ its own.
 ```
 index.html          landing page, pick student or instructor
 student.html         name + PIN, classify 20 features with a live graph of their placements
-instructor.html      password gate, live comparator, grading, answer key, danger zone
+instructor.html      password gate, live comparator, grading, danger zone
 assets/
   data.js             feature list, categories, graph geometry (shared)
   config.js           APPS_SCRIPT_URL + INSTRUCTOR_PASSWORD — edit this
   style.css           shared styling
-data/
-  answer-key.json     your ground-truth Kano placements (blank until you fill it in)
 apps-script/
   Code.gs             paste into a Google Apps Script project (see below)
 ```
@@ -57,15 +55,7 @@ source can read it. It'll stop a casual student from wandering into the
 instructor view; it won't stop someone determined. Don't rely on it for
 anything actually sensitive.
 
-## 3. Fill in your answer key
-
-Open `instructor.html`, log in, go to the **Answer key** tab, set each
-feature's category and execution level, then click **Download
-answer-key.json** and replace `data/answer-key.json` in the repo with it
-before you push. (You can also just hand-edit `data/answer-key.json`
-directly — it's plain JSON.)
-
-## 4. Push to GitHub and turn on Pages
+## 3. Push to GitHub and turn on Pages
 
 From inside this folder:
 
@@ -78,9 +68,11 @@ git remote add origin https://github.com/<your-username>/<repo-name>.git
 git push -u origin main
 ```
 
-Then on GitHub: **Settings → Pages → Build and deployment → Source: Deploy
-from a branch → Branch: main, folder: / (root) → Save**. Your site will be
-live at `https://<your-username>.github.io/<repo-name>/` in a minute or two.
+Then on GitHub: **Settings → Pages → Build and deployment → Source: GitHub
+Actions**. The included `.github/workflows/pages.yml` builds and deploys on
+every push to `main` (also runnable on demand from the **Actions** tab).
+Your site will be live at `https://<your-username>.github.io/<repo-name>/`
+within a minute or two of the workflow completing.
 
 Share `.../student.html` with the class and keep `.../instructor.html` for
 yourself.
@@ -90,8 +82,13 @@ yourself.
 1. A student saves or submits on `student.html` → that POSTs their answers
    to the Apps Script URL → the script writes/updates a row in the Sheet.
 2. `instructor.html` polls the same Apps Script URL every 20 seconds (and on
-   demand via **Refresh now**) and re-plots whatever's in the Sheet against
-   your answer key. There's no manual file loading anymore — it's live.
+   demand via **Refresh now**), listing every submission — draft or
+   submitted — in the Responses panel. There's no manual file loading.
+3. Pick any one of those responses from the **Compare against** dropdown to
+   use it as the reference plotted on the graph (e.g. your own answers, if
+   you did the activity yourself first). This choice is remembered in your
+   browser between visits. There's no separate hand-authored answer key —
+   an actual submission is your ground truth.
 
 ## Privacy cleanup after the assignment
 

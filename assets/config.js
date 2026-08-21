@@ -9,5 +9,9 @@
    view; it is NOT real authentication and should never guard anything
    actually sensitive. */
 
-const APPS_SCRIPT_URL = https://script.google.com/macros/s/AKfycbykJbdAqxYBzXukQHd0q8K8_vbLtbYdeapG-jA6ypHDsUrMwGmhqZJTQS0uv4fb0oS9EQ/exec;
+// Keep the quotes around the URL below when you paste a new deployment in --
+// without them this line is invalid JavaScript, which silently breaks this
+// whole file (both pages then quietly fall back to browser-only storage,
+// with no visible error, since nothing here throws on a missing constant).
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbykJbdAqxYBzXukQHd0q8K8_vbLtbYdeapG-jA6ypHDsUrMwGmhqZJTQS0uv4fb0oS9EQ/exec";
 const INSTRUCTOR_PASSWORD = "harigopalan";

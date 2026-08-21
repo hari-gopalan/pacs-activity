@@ -7,9 +7,8 @@
  *
  * Sheet layout (auto-created on first request), tab "Responses":
  *   name | pin | status | timestamp | dataJSON
- * dataJSON holds the full submission (answers, executions, newFeatures,
- * pitchFeature, pitch, justification) as a JSON string, so the sheet stays
- * simple even though the assignment has several parts.
+ * dataJSON holds the full submission (answers, executions, justification)
+ * as a JSON string, so the sheet stays simple regardless of schema changes.
  */
 
 // Must match INSTRUCTOR_PASSWORD in assets/config.js — required to clear all

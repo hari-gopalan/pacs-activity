@@ -7,7 +7,7 @@ its own.
 
 ```
 index.html          landing page, pick student or instructor
-student.html         name + PIN, classify 20 features, propose 3, pitch 1
+student.html         name + PIN, classify 20 features with a live graph of their placements
 instructor.html      password gate, live comparator, grading, answer key, danger zone
 assets/
   data.js             feature list, categories, graph geometry (shared)

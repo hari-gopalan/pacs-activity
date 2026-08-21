@@ -369,6 +369,7 @@ function positionTip(e){ const r = wrapEl.getBoundingClientRect(); tipEl.style.l
 
 /* ---------- grading ---------- */
 function gradingRoster(){ return responses.filter((r,i) => i !== groundTruthIndex); }
+const MAX_TOTAL = CRITERIA.length * 4;
 function totalFor(name){
   const g = grades[name]; if(!g) return null;
   let sum=0, count=0;
@@ -383,7 +384,7 @@ function renderGradingRoster(){
   list.forEach(r => {
     const t = totalFor(r.name);
     const row = document.createElement('div'); row.className = 'rrow' + (gradingActive===r.name ? ' active' : '');
-    row.innerHTML = `<b>${r.name}</b><small>${t==null?'Not started':t+' / 16'}</small>`;
+    row.innerHTML = `<b>${r.name}</b><small>${t==null?'Not started':t+' / '+MAX_TOTAL}</small>`;
     row.onclick = () => { gradingActive = r.name; renderGradingRoster(); renderGradingPanel(); };
     wrap.appendChild(row);
   });
@@ -395,7 +396,7 @@ function renderGradingPanel(){
   if(!grades[gradingActive]) grades[gradingActive] = {comment:''};
   const g = grades[gradingActive];
   const t = totalFor(gradingActive);
-  let html = `<h2>${gradingActive}</h2><div class="total">Total: ${t==null?'Not started':t+' / 16'}</div>`;
+  let html = `<h2>${gradingActive}</h2><div class="total">Total: ${t==null?'Not started':t+' / '+MAX_TOTAL}</div>`;
   html += renderSubmissionView(r);
   CRITERIA.forEach(c => {
     html += `<div class="crit"><b class="critname">${c.name}</b><div class="scorebtns" data-key="${c.key}">`;
@@ -415,31 +416,24 @@ function renderGradingPanel(){
 }
 function renderSubmissionView(r){
   if(!r) return '';
-  let html = '<div class="submission-view"><h3>Proposed features</h3>';
-  (r.newFeatures||[]).forEach((nf,i) => { html += `<div class="feat"><b>${nf.name||'(untitled '+(i+1)+')'}</b><br>${nf.description||''}</div>`; });
-  if(!r.newFeatures || !r.newFeatures.length) html += '<div class="feat">Not submitted.</div>';
-  html += '</div><div class="submission-view"><h3>Pitch</h3>';
-  const pitched = (r.newFeatures && r.newFeatures[r.pitchFeature]) ? (r.newFeatures[r.pitchFeature].name || 'Feature '+((r.pitchFeature||0)+1)) : null;
-  html += `<div class="feat">${pitched?('<b>'+pitched+'</b><br>'):''}${r.pitch||'Not submitted.'}</div>`;
-  html += '</div>';
-  if(r.justification){ html += `<div class="submission-view"><h3>Overall justification</h3><div class="feat">${r.justification}</div></div>`; }
-  return html;
+  if(!r.justification) return '';
+  return `<div class="submission-view"><h3>Overall justification</h3><div class="feat">${r.justification}</div></div>`;
 }
 function renderGradingSummary(){
   const wrap = document.getElementById('summaryTable'); const list = gradingRoster();
   if(!list.length){ wrap.innerHTML = '<div class="empty">No responses loaded.</div>'; return; }
-  let html = '<table><thead><tr><th>Student</th><th>Kano model</th><th>Creativity</th><th>CTO pitch</th><th>Justification</th><th>Total</th></tr></thead><tbody>';
+  let html = '<table><thead><tr><th>Student</th>' + CRITERIA.map(c=>`<th>${c.name}</th>`).join('') + '<th>Total</th></tr></thead><tbody>';
   list.forEach(r => {
     const g = grades[r.name] || {}; const t = totalFor(r.name);
     html += `<tr><td>${r.name}</td>`;
     CRITERIA.forEach(c => { html += `<td class="num">${g[c.key]!=null?g[c.key]:'Pending'}</td>`; });
-    html += `<td class="num">${t==null?'Pending':t+' / 16'}</td></tr>`;
+    html += `<td class="num">${t==null?'Pending':t+' / '+MAX_TOTAL}</td></tr>`;
   });
   html += '</tbody></table>'; wrap.innerHTML = html;
 }
 document.getElementById('exportCsv').onclick = () => {
   const list = gradingRoster();
-  let csv = 'Student,Application of the Kano Model,Creativity of New Features,CTO Investment Pitch,Overall Justification,Total,Notes\n';
+  let csv = 'Student,' + CRITERIA.map(c=>c.name).join(',') + ',Total,Notes\n';
   list.forEach(r => {
     const g = grades[r.name] || {}; const t = totalFor(r.name);
     const row = [r.name];

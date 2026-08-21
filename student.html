@@ -13,7 +13,7 @@
   <div class="title-block">
     <span class="eyebrow">MSRT300 · Student</span>
     <h1>PACS Kano Activity</h1>
-    <div class="muted">For each feature, choose the category that best fits it and how well it's typically executed today. Then propose three new features and pitch one.</div>
+    <div class="muted">Classify each feature by how it drives satisfaction and how well it's typically executed today. Watch your placements plot live on the graph as you go.</div>
   </div>
   <div class="toolbar"><a href="index.html"><button type="button">Back</button></a></div>
 </header>
@@ -41,29 +41,82 @@
     </section>
 
     <section class="card section">
-      <h2>Part 1 — Classify each feature</h2>
+      <h2>Classify each feature</h2>
       <div class="progress" id="progressText">0 / 20 classified</div>
-      <div id="featureList"></div>
-      <div id="catTooltip" class="tooltip fixed"></div>
-    </section>
 
-    <section class="card section">
-      <h2>Part 2 — Propose three new features</h2>
-      <p class="muted" style="margin:4px 0 0">What would you add to a PACS that isn't on the list above? Be specific about who benefits and why.</p>
-      <div id="proposeList"></div>
-    </section>
+      <div class="kano-grid">
+        <div class="graph" id="wrap">
+          <div class="graph-frame">
+            <svg id="chart" viewBox="0 0 900 650">
+              <defs>
+                <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                  <path d="M30 0 L0 0 0 30" fill="none" stroke="#eef1f4" stroke-width="1"/>
+                </pattern>
+                <filter id="lift" x="-40%" y="-40%" width="180%" height="180%">
+                  <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#1a2430" flood-opacity=".22"/>
+                </filter>
+              </defs>
+              <rect x="0" y="0" width="900" height="650" fill="#fdfefe"/>
+              <rect x="0" y="0" width="900" height="650" fill="url(#grid)"/>
+              <g font-family="IBM Plex Mono" fill="#aab4bf" font-size="11" letter-spacing=".04em">
+                <text x="24" y="30">YOUR PLACEMENTS</text>
+                <text x="24" y="46" fill="#c3cbd3">Y AXIS: SATISFACTION</text>
+                <text x="876" y="30" text-anchor="end">X AXIS: EXECUTION QUALITY</text>
+                <text x="876" y="46" text-anchor="end" fill="#c3cbd3" id="markerCount">MARKERS 0 / 20</text>
+                <text x="24" y="628" fill="#c3cbd3">SCALE: NORMALIZED</text>
+                <text x="876" y="628" text-anchor="end" fill="#c3cbd3">KANO MODEL, 1984</text>
+              </g>
+              <g stroke="#c7ced6" stroke-width="1.4">
+                <line x1="120" y1="345" x2="815" y2="345"/>
+                <line x1="460" y1="96" x2="460" y2="605"/>
+              </g>
+              <g fill="#c7ced6">
+                <path d="M815 345 l-11 -5.5 v11 z"/>
+                <path d="M460 96 l-5.5 11 h11 z"/>
+              </g>
+              <g fill="none" stroke-linecap="round">
+                <path d="M150 345 C 340 344, 610 300, 782 118" stroke="#fdfefe" stroke-width="9"/>
+                <path d="M175 560 L 770 140" stroke="#fdfefe" stroke-width="9"/>
+                <path d="M195 585 C 300 430, 415 362, 782 350" stroke="#fdfefe" stroke-width="9"/>
+                <path d="M150 352 L 782 352" stroke="#fdfefe" stroke-width="8"/>
+              </g>
+              <g fill="none" stroke-linecap="round" filter="url(#lift)">
+                <path d="M150 345 C 340 344, 610 300, 782 118" stroke="var(--attractive)" stroke-width="4"/>
+                <path d="M175 560 L 770 140" stroke="var(--performance)" stroke-width="4"/>
+                <path d="M195 585 C 300 430, 415 362, 782 350" stroke="var(--mustbe)" stroke-width="4"/>
+                <path d="M150 352 L 782 352" stroke="var(--indifferent)" stroke-width="3" stroke-dasharray="1 7"/>
+              </g>
+              <g font-family="Space Grotesk" font-weight="600" fill="#3a4552">
+                <g class="axis-hint" data-tip="Top of the vertical axis. The feature exceeds what you expected.">
+                  <text x="440" y="80" font-size="14" text-anchor="middle" letter-spacing=".02em">DELIGHTED</text>
+                </g>
+                <g class="axis-hint" data-tip="Bottom of the vertical axis. Not having this, or having it done badly, would be frustrating.">
+                  <text x="440" y="632" font-size="14" text-anchor="middle" letter-spacing=".02em">DISSATISFIED</text>
+                </g>
+                <g class="axis-hint" data-tip="Left end of the horizontal axis. The feature is missing, broken, or poorly executed.">
+                  <text x="112" y="330" font-size="12.5" text-anchor="end" fill="#8b95a1">POORLY DONE</text>
+                </g>
+                <g class="axis-hint" data-tip="Right end of the horizontal axis. The feature is fully present and well executed.">
+                  <text x="823" y="330" font-size="12.5" fill="#8b95a1">WELL DONE</text>
+                </g>
+              </g>
+              <g id="markers"></g>
+            </svg>
+          </div>
+          <div class="kano-key">
+            <div class="key-item"><div class="row"><i style="background:var(--attractive)"></i><b>Attractive</b></div><p>Unexpected when present, not missed when absent.</p></div>
+            <div class="key-item"><div class="row"><i style="background:var(--performance)"></i><b>Performance</b></div><p>Satisfaction rises the better this is executed.</p></div>
+            <div class="key-item"><div class="row"><i style="background:var(--mustbe)"></i><b>Must-Be</b></div><p>Expected by default, its absence causes real frustration.</p></div>
+            <div class="key-item"><div class="row"><i style="background:var(--indifferent)"></i><b>Indifferent</b></div><p>Users notice little change either way.</p></div>
+          </div>
+        </div>
 
-    <section class="card section">
-      <h2>Part 3 — Pitch it to the CTO</h2>
-      <p class="muted" style="margin:4px 0 10px">Pick one of your three proposed features and make the investment case.</p>
-      <label style="display:block;font-size:11.5px;font-weight:700;color:var(--ink-dim);margin-bottom:6px">Which feature are you pitching?</label>
-      <select id="pitchFeatureSel" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-family:var(--body);font-size:13px;margin-bottom:12px">
-        <option value="0">Feature 1</option>
-        <option value="1">Feature 2</option>
-        <option value="2">Feature 3</option>
-      </select>
-      <label style="display:block;font-size:11.5px;font-weight:700;color:var(--ink-dim);margin-bottom:6px">Your pitch</label>
-      <textarea id="pitchText" placeholder="Why is this a no-brainer investment for the department?"></textarea>
+        <div class="side" id="featureListWrap">
+          <div id="featureList"></div>
+        </div>
+      </div>
+
+      <div id="hoverTip" class="tooltip fixed"></div>
     </section>
 
     <section class="card section">
@@ -84,7 +137,7 @@
 <script src="assets/config.js"></script>
 <script src="assets/data.js"></script>
 <script>
-let state = null; // {name, pin, status, timestamp, answers[], executions[], newFeatures[3], pitchFeature, pitch, justification}
+let state = null; // {name, pin, status, timestamp, answers[], executions[], justification}
 let usingLocalFallback = false;
 
 function blankState(name, pin){
@@ -92,8 +145,7 @@ function blankState(name, pin){
     name, pin, status:'draft', timestamp:null,
     answers: FEATURES.map(()=>null),
     executions: FEATURES.map(()=>null),
-    newFeatures: [{name:'',description:''},{name:'',description:''},{name:'',description:''}],
-    pitchFeature: 0, pitch:'', justification:''
+    justification: ''
   };
 }
 
@@ -171,9 +223,7 @@ function openForm(loaded){
   document.getElementById('saveMsg').textContent = loaded ? 'Loaded your saved progress.' : 'Starting fresh — nothing saved yet.';
   if(usingLocalFallback) document.getElementById('saveMsg').textContent += ' (Saving to this browser only — live sync isn\'t configured yet.)';
   renderFeatureList();
-  renderPropose();
-  document.getElementById('pitchFeatureSel').value = state.pitchFeature || 0;
-  document.getElementById('pitchText').value = state.pitch || '';
+  refreshGraph();
   document.getElementById('justificationText').value = state.justification || '';
 }
 
@@ -195,6 +245,18 @@ function updateProgress(){
   const n = state.answers.filter(Boolean).length;
   document.getElementById('progressText').textContent = n + ' / ' + FEATURES.length + ' classified';
 }
+
+/* ---------- shared hover tooltip (category pills, graph markers, axis hints) ---------- */
+const tip = document.getElementById('hoverTip');
+function positionTip(e){ tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; }
+function showTipText(e, text){ tip.textContent = text; positionTip(e); tip.style.opacity = 1; }
+function showTipHtml(e, html){ tip.innerHTML = html; positionTip(e); tip.style.opacity = 1; }
+function hideTip(){ tip.style.opacity = 0; }
+document.querySelectorAll('.axis-hint').forEach(el => {
+  el.addEventListener('mouseenter', e => { if(el.dataset.tip) showTipText(e, el.dataset.tip); });
+  el.addEventListener('mousemove', e => { if(el.dataset.tip) positionTip(e); });
+  el.addEventListener('mouseleave', hideTip);
+});
 
 function renderFeatureList(){
   const box = document.getElementById('featureList');
@@ -221,27 +283,21 @@ function renderFeatureList(){
     box.appendChild(card);
   });
   syncPillStates();
-  const tip = document.getElementById('catTooltip');
   box.querySelectorAll('.pillbtn[data-cat]').forEach(btn => {
     btn.onclick = () => {
       const fi = +btn.dataset.fi;
       state.answers[fi] = (state.answers[fi] === btn.dataset.cat) ? null : btn.dataset.cat;
-      syncPillStates(); updateProgress();
+      syncPillStates(); updateProgress(); refreshGraph();
     };
-    btn.addEventListener('mouseenter', e => {
-      tip.textContent = CATEGORY_EXPLAIN[btn.dataset.cat](FEATURES[+btn.dataset.fi]);
-      tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; tip.style.opacity = 1;
-    });
-    btn.addEventListener('mousemove', e => {
-      tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px';
-    });
-    btn.addEventListener('mouseleave', () => { tip.style.opacity = 0; });
+    btn.addEventListener('mouseenter', e => showTipText(e, CATEGORY_EXPLAIN[btn.dataset.cat](FEATURES[+btn.dataset.fi])));
+    btn.addEventListener('mousemove', positionTip);
+    btn.addEventListener('mouseleave', hideTip);
   });
   box.querySelectorAll('.pillbtn[data-exec]').forEach(btn => {
     btn.onclick = () => {
       const fi = +btn.dataset.fi;
       state.executions[fi] = (state.executions[fi] === btn.dataset.exec) ? null : btn.dataset.exec;
-      syncPillStates();
+      syncPillStates(); refreshGraph();
     };
   });
   updateProgress();
@@ -255,30 +311,34 @@ function syncPillStates(){
   });
 }
 
-function renderPropose(){
-  const box = document.getElementById('proposeList');
-  box.innerHTML = '';
-  state.newFeatures.forEach((nf, i) => {
-    const block = document.createElement('div');
-    block.className = 'feat-block';
-    block.innerHTML = `<b>Feature ${i+1}</b>
-      <label>Name</label><input class="feat-input" data-i="${i}" data-field="name" value="${(nf.name||'').replace(/"/g,'&quot;')}">
-      <label>Why it matters</label><textarea data-i="${i}" data-field="description" style="min-height:56px">${nf.description||''}</textarea>`;
-    box.appendChild(block);
+/* ---------- live graph of the student's own placements ---------- */
+function refreshGraph(){
+  const n = state.answers.filter(Boolean).length;
+  document.getElementById('markerCount').textContent = 'MARKERS ' + n + ' / ' + FEATURES.length;
+  const items = [];
+  FEATURES.forEach((f, fi) => {
+    const cat = state.answers[fi];
+    if(!cat) return;
+    const exec = state.executions[fi];
+    const p = point(cat, fi, 0, exec);
+    items.push({x:p.x, y:p.y, r:8.5, fi});
   });
-  box.querySelectorAll('[data-field]').forEach(el => {
-    el.oninput = () => { state.newFeatures[+el.dataset.i][el.dataset.field] = el.value; refreshPitchOptions(); };
+  resolveCollisions(items, 4);
+  const m = document.getElementById('markers');
+  m.innerHTML = '';
+  items.forEach(it => {
+    const cat = state.answers[it.fi];
+    const exec = state.executions[it.fi];
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.classList.add('marker');
+    g.innerHTML = `<circle class="mkr" cx="${it.x}" cy="${it.y}" r="8.5" fill="${COLORS[cat]}" stroke="#fdfefe" stroke-width="1.6"/><text x="${it.x}" y="${it.y+3.2}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="600" fill="#fff">${it.fi+1}</text>`;
+    g.addEventListener('mouseenter', e => showTipHtml(e, `<b>${it.fi+1}. ${FEATURES[it.fi]}</b><br>${cat}${exec ? ' · '+exec : ''}`));
+    g.addEventListener('mousemove', positionTip);
+    g.addEventListener('mouseleave', hideTip);
+    m.appendChild(g);
   });
-  refreshPitchOptions();
 }
-function refreshPitchOptions(){
-  const sel = document.getElementById('pitchFeatureSel');
-  const cur = sel.value;
-  sel.innerHTML = state.newFeatures.map((nf,i) => `<option value="${i}">${nf.name ? nf.name : 'Feature '+(i+1)}</option>`).join('');
-  sel.value = cur;
-}
-document.getElementById('pitchFeatureSel').onchange = e => { state.pitchFeature = +e.target.value; };
-document.getElementById('pitchText').oninput = e => { state.pitch = e.target.value; };
+
 document.getElementById('justificationText').oninput = e => { state.justification = e.target.value; };
 
 async function doSave(status){

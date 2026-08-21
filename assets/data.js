@@ -44,8 +44,6 @@ const CATEGORY_EXPLAIN = {
 
 const CRITERIA = [
  {key:'kano', name:'Application of the Kano Model', levels:{4:'Features are placed appropriately, with at least half of the placements being reasonable and demonstrating an understanding of the importance of each PACS feature to the end user.', 1:'Placement demonstrates poor understanding of PACS features and how they relate to the end user.'}},
- {key:'creativity', name:'Creativity of New Features', levels:{4:'Three creative, appropriate, and relevant PACS features are proposed that demonstrate thoughtful consideration of future user needs.', 3:'Three relevant features are proposed with some creativity.', 2:'Features are somewhat relevant but lack originality or value to the user.', 1:'Features are inappropriate, incomplete, or missing.'}},
- {key:'pitch', name:'CTO Investment Pitch', levels:{4:'The proposed feature is presented as a compelling, "no-brainer" investment with a clear value proposition and strong justification.', 3:'The feature is supported with a reasonable justification for investment.', 2:'The justification is present but weak or only partially convincing.', 1:'The feature is poorly justified and would not be a convincing investment.'}},
  {key:'justification', name:'Overall Justification', levels:{4:'Decisions throughout the activity are logical, consistent, and supported by user needs or workflow considerations.', 3:'Most decisions are explained with reasonable logic.', 2:'Some explanations are unclear or unsupported.', 1:'Little or no justification is provided.'}}
 ];
 

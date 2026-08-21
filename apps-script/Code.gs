@@ -59,6 +59,14 @@ function doGet(e) {
       if (!row[0]) continue;
       let parsed = {};
       try { parsed = JSON.parse(row[4] || '{}'); } catch (err) { parsed = {}; }
+      // student.html saves its whole local state as dataJSON, which includes
+      // the student's own pin/name fields -- strip those before this public,
+      // unauthenticated endpoint echoes the blob back, or every student's
+      // PIN leaks to anyone who fetches ?action=list (this is the actual
+      // secret that gates re-editing their answers, unlike the instructor
+      // password, which is only ever a light deterrent).
+      delete parsed.pin;
+      delete parsed.name;
       responses.push(Object.assign({}, parsed, {
         name: row[0],
         status: row[2],
